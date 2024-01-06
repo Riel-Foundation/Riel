@@ -5,16 +5,16 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let fixed_args = fix_args(args);
     match fixed_args.len() { // NOTE: This structure is bound to change
-        0 => println!
-        ("Welcome to Riel! Try help or --help for more information, or init / create to start a repository."),
-        1 => match fixed_args[0].as_str() {
+        1 => println!
+        ("Riel works! Try help or --help for more information"),
+        2 => match fixed_args[1].as_str() {
             "help" => println!("Welcome to Riel! Try help or --help for more information, or init / create to start a repository."),
             "--help" => println!("Welcome to Riel! Try help or --help for more information, or init / create to start a repository."),
             "init" => mount_repo(),
             "mount" => mount_repo(),
-            _ => println!("Welcome to Riel! Try help or --help for more information, or init / create to start a repository."),
+            _ => println!("{} is not a valid command. Try help or --help for more information.", fixed_args[0]),
         },
-        _ => println!("Welcome to Riel! Try help or --help for more information, or init / create to start a repository."),
+        _ => println!("Unrecognized. Try help or --help for more information"),
         }
     }
 fn fix_args(args: Vec<String>) -> Vec<String> {
@@ -22,8 +22,15 @@ fn fix_args(args: Vec<String>) -> Vec<String> {
     clean_args.iter().map(|x| x.replace(" ", "")).collect()
 }
 fn mount_repo() -> () {
-   // Create a .riel folder
-   fs::create_dir(".riel").expect("Failed to create .riel folder, please check your permissions.");
-    // Create a .riel/objects folder
-    fs::create_dir(".riel/commits").expect("Failed to create .riel/objects folder, please check your permissions.");
+    if fs::metadata(".riel").is_ok() {
+        println!("Riel repository already exists in this directory.");
+    } else {
+        create_repo();
+        println!("Riel repository created successfully.");
+    }
+    
+    fn create_repo() -> () {
+        fs::create_dir(".riel").expect("Failed to create .riel directory, please check your permissions.");
+        fs::create_dir(".riel/commits").expect("Failed to create .riel/objects directory, but .riel worked. Please check your storage & folder structure.");
+    }
 }
