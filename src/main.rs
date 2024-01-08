@@ -14,7 +14,7 @@ fn main() {
             "--help" => println!("{}", HELP),
             "init" => mount_repo(),
             "mount" => mount_repo(),
-            _ => println!("{} is not a valid command. Try help or --help for more information.", fixed_args[0]),
+            _ => println!("{} is not a valid command. Try help or --help for more information.", fixed_args[1]),
         },
         _ => println!("Unrecognized. Try help or --help for more information"),
         }
