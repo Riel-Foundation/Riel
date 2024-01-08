@@ -8,15 +8,15 @@ fn main() {
     let fixed_args = fix_args(args);
     // let riel = fixed_args[0].as_str();
     let command = fixed_args[1].as_str();
-    // let command_args = &fixed_args[2..];
+    let command_args = fixed_args[2..].to_vec();
     match fixed_args.len() { // NOTE: This structure is bound to change
         1 => println!
         ("{}", RIEL_WORKS),
         2 => match command {
             "help" => println!("{}", HELP),
             "--help" => println!("{}", HELP),
-            "init" => mount_repo(),
-            "mount" => mount_repo(),
+            "init" => exec(command, command_args),
+            "mount" => exec("init", command_args),
             _ => println!("{} is not a valid command. Try help or --help for more information.", command),
         },
         _ => println!("Failed to parse command."),
@@ -25,6 +25,12 @@ fn main() {
 fn fix_args(args: Vec<String>) -> Vec<String> {
     let clean_args: Vec<String> = args.iter().map(|x| x.to_lowercase()).collect();
     clean_args.iter().map(|x| x.replace(" ", "")).collect()
+}
+fn exec(command: &str, subcommands: Vec<String>) -> () {
+    match command {
+        "init" => mount_repo(), // for now, no subcommands
+        _ => println!("Failed to parse command.")
+    }
 }
 fn mount_repo() -> () {
     if fs::metadata(".riel").is_ok() {
