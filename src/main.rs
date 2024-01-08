@@ -6,17 +6,20 @@ fn main() {
     const HELP: &str = "Welcome to Riel! Try help or --help for more information, or init / create to start a repository.";
     let args: Vec<String> = env::args().collect();
     let fixed_args = fix_args(args);
+    // let riel = fixed_args[0].as_str();
+    let command = fixed_args[1].as_str();
+    // let command_args = &fixed_args[2..];
     match fixed_args.len() { // NOTE: This structure is bound to change
         1 => println!
         ("{}", RIEL_WORKS),
-        2 => match fixed_args[1].as_str() {
+        2 => match command {
             "help" => println!("{}", HELP),
             "--help" => println!("{}", HELP),
             "init" => mount_repo(),
             "mount" => mount_repo(),
-            _ => println!("{} is not a valid command. Try help or --help for more information.", fixed_args[1]),
+            _ => println!("{} is not a valid command. Try help or --help for more information.", command),
         },
-        _ => println!("Unrecognized. Try help or --help for more information"),
+        _ => println!("Failed to parse command."),
         }
     }
 fn fix_args(args: Vec<String>) -> Vec<String> {
