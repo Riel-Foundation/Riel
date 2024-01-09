@@ -68,11 +68,7 @@ fn mount_repo() -> () {
         fs::create_dir(".riel/area").expect("Failed to create .riel/area directory, but .riel worked. Please check your storage & folder structure.");
         // create rielignore
         let mut ignore_file = fs::File::create("./.rielignore").expect("Failed to create .rielignore file.");
-        let buffer = b"# This is a .rielignore file. It is used to ignore files when adding them to the repository. \n
-        # Folders should be written like this: \n
-        .git \n
-        test \n
-        ignorethisfolder \n";
+        let buffer = b"# This is a .rielignore file. It is used to ignore files when adding them to the repository. \n# Folders should be written like this: \n.git\ntest\nignorethisfolder \n";
         ignore_file.write_all(buffer).expect("Failed to write to .rielignore file.");
     }
 }
