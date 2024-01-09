@@ -73,7 +73,7 @@ fn commit(commit_args: Vec<String>) -> bool {
 }
 fn add_files(subcommands: Vec<String>) -> bool {
     if !check_repo() {
-        println!("No repository found. Try init or mount.");
+        println!("No valid Riel repository found. Try init or mount.");
         return false;
     }
     let checking_vec = subcommands.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
@@ -85,7 +85,7 @@ fn add_files(subcommands: Vec<String>) -> bool {
                 let ignored: Ignores = get_ignored();
                 if ignored.exists {
                     // should add all files except ignored and .riel
-                    if copy_to_area(fs::read_dir(".")
+                   /* if copy_to_area(fs::read_dir(".")
                     .expect("Failed to read directory.")
                     .map(|x| x.unwrap().path().display().to_string())
                         .filter(|x| !ignored.ignored.contains(x))
@@ -93,7 +93,8 @@ fn add_files(subcommands: Vec<String>) -> bool {
                         {
                             // if copied
                             return true;
-                        }
+                        } */
+                        todo!(".rielignore not implemented yet.");
                 } else {
                     println!("Warning: No .rielignore file found. Adding all files.");
                     // should add all files outside of .riel
@@ -120,7 +121,9 @@ fn add_files(subcommands: Vec<String>) -> bool {
     false
 }
 fn check_repo() -> bool {
-    fs::metadata(".riel").is_ok()
+    fs::metadata(".riel").is_ok() &&
+    fs::metadata(".riel/commits").is_ok() &&
+    fs::metadata(".riel/area").is_ok()
 }
 struct Ignores {
     exists: bool,
@@ -146,6 +149,9 @@ fn get_ignored() -> Ignores {
 }
 fn copy_to_area(items: Vec<String>) -> bool {
     for item in items {
+        if item.starts_with(".riel") || item.starts_with("./.riel") {
+            continue;
+        }
         if fs::metadata(format!("./{}/", &item)).is_ok() { // directory-folder { // file
             fs::create_dir(format!(".riel/area/{}", &item)).expect("Failed to create directory.");
             println!("Organized {}.", item);
