@@ -1,7 +1,7 @@
 #![allow(unused_variables)]
 use std::env;
 use std::fs;
-
+use std::io::Write;
 fn main() {
     const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
     const HELP: &str = "Welcome to Riel! Try help or --help for more information, or init / create to start a repository.";
@@ -61,11 +61,19 @@ fn mount_repo() -> () {
         create_repo();
         println!("Riel repository created successfully.");
     }
-
+    // TODO: Probably externalize this function
     fn create_repo() -> () {
         fs::create_dir(".riel").expect("Failed to create .riel directory, please check your permissions.");
         fs::create_dir(".riel/commits").expect("Failed to create .riel/commits directory, but .riel worked. Please check your storage & folder structure.");
         fs::create_dir(".riel/area").expect("Failed to create .riel/area directory, but .riel worked. Please check your storage & folder structure.");
+        // create rielignore
+        let mut ignore_file = fs::File::create("./.rielignore").expect("Failed to create .rielignore file.");
+        let buffer = b"# This is a .rielignore file. It is used to ignore files when adding them to the repository. \n
+        # Folders should be written like this: \n
+        .git \n
+        test \n
+        ignorethisfolder \n";
+        ignore_file.write_all(buffer).expect("Failed to write to .rielignore file.");
     }
 }
 fn commit(commit_args: Vec<String>) -> bool {
