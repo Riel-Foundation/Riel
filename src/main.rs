@@ -20,6 +20,7 @@ fn main() {
             "mount" => exec("init", command_args),
             "commit" => exec(command, command_args),
             "add" => exec(command, command_args),
+            "sudo-destruct" => exec(command, command_args), // TODO: This shouldn't be this way when in production
             _ => println!("{} is not a valid command. Try help or --help for more information.", command),
         },
         _ => println!("Failed to parse command."),
@@ -44,6 +45,11 @@ fn exec(command: &str, subcommands: Vec<String>) -> () {
             } else {
                 println!("Could not add all the files.");
             }
+        },
+        "sudo-destruct" => {
+            drop(subcommands);
+            println!("Riel is still in development. This command could be removed in the future.");
+            fs::remove_dir_all(".riel").expect("Failed to remove .riel directory.");
         },
         _ => println!("Failed to parse command here.")
     }
