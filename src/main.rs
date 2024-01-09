@@ -87,6 +87,7 @@ fn add_files(subcommands: Vec<String>) -> bool {
                     // should add all files except ignored and .riel
                     let ignore_list: Vec<String> = ignored.ignored.iter().map(|x| x.to_string()).collect();
                     let fixed_ignore_list: Vec<String> = ignore_list.iter().map(|x| format!("./{}", x)).collect();
+                    // TODO: Create a .rielignore parser
                     if copy_to_area(fs::read_dir(".")
                     .expect("Failed to read directory.")
                     .map(|x| x.unwrap().path().display().to_string())
