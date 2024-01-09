@@ -39,7 +39,7 @@ fn exec(command: &str, subcommands: Vec<String>) -> () {
                 println!("Commit failed.");
             }},
         "add" =>  {
-            if add_file(subcommands) {
+            if add_files(subcommands) {
                 println!("Added file(s).");
             } else {
                 println!("Could not add all the files.");
@@ -71,28 +71,92 @@ fn commit(commit_args: Vec<String>) -> bool {
     false*/ 
     todo!()
 }
-fn add_file(subcommands: Vec<String>) -> bool {
+fn add_files(subcommands: Vec<String>) -> bool {
     if !check_repo() {
         println!("No repository found. Try init or mount.");
         return false;
     }
+    let checking_vec = subcommands.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
+    let should_commit_all: bool = checking_vec.contains(&"-all") || checking_vec.contains(&"-A");
     match subcommands.len() {
         0 => println!("No files specified."),
         1.. => {
-            for file in subcommands {
-                if fs::metadata(&file).is_ok() {
-                    fs::copy(&file, format!(".riel/area/{}", &file)).expect("Failed to copy file.");
-                    println!("Prepared {}.", file);
+            if should_commit_all {
+                let ignored: Ignores = get_ignored();
+                if ignored.exists {
+                    // should add all files except ignored and .riel
+                    if copy_to_area(fs::read_dir(".")
+                    .expect("Failed to read directory.")
+                    .map(|x| x.unwrap().path().display().to_string())
+                        .filter(|x| !ignored.ignored.contains(x))
+                        .collect::<Vec<String>>()) 
+                        {
+                            // if copied
+                            return true;
+                        }
                 } else {
-                    println!("{} does not exist.", file);
-                    return false;
+                    println!("Warning: No .rielignore file found. Adding all files.");
+                    // should add all files outside of .riel
+                    if copy_to_area(fs::read_dir(".")
+                    .expect("Failed to read directory.")
+                    .map(|x| x.unwrap().path().display().to_string())
+                        .collect::<Vec<String>>())
+                        {
+                            // if copied
+                            return true;
+                        }
+                }
+            }
+            else {
+                // should add all files specified
+                if copy_to_area(subcommands)
+                {
+                    return true;
                 }
             }
         },
         _ => println!("Failed to parse command."),
     }
-    true
+    false
 }
 fn check_repo() -> bool {
     fs::metadata(".riel").is_ok()
+}
+struct Ignores {
+    exists: bool,
+    ignored: Vec<String>,
+}
+fn get_ignored() -> Ignores {
+    let mut ignored: Vec<String> = Vec::new();
+    let mut exists: bool = false;
+    if fs::metadata("./.rielignore").is_ok() {
+        exists = true;
+        let ignore_file = fs::read_to_string("./.rielignore").expect("Failed to read .rielignore.");
+        for line in ignore_file.lines() {
+            if line.starts_with("#") {
+                continue;
+            }
+            ignored.push(line.to_string());
+        }
+    }
+    Ignores {
+        exists,
+        ignored,
+    }
+}
+fn copy_to_area(items: Vec<String>) -> bool {
+    for item in items {
+        if fs::metadata(format!("./{}/", &item)).is_ok() { // directory-folder { // file
+            fs::create_dir(format!(".riel/area/{}", &item)).expect("Failed to create directory.");
+            println!("Organized {}.", item);
+            copy_to_area(fs::read_dir(&item).expect("Failed to read directory.").map(|x| x.unwrap().path().display().to_string()).collect::<Vec<String>>());
+        } else if fs::metadata(&item).is_ok() { // file
+            fs::copy(&item, format!(".riel/area/{}", &item)).expect("Failed to copy item.");
+            println!("Prepared {}.", item);
+        }else{
+            println!("{} does not exist. Usage is: riel add -A/[file1 file2 file3...]", item);
+            return false;
+        }
+    }
+    true
 }
