@@ -85,16 +85,17 @@ fn add_files(subcommands: Vec<String>) -> bool {
                 let ignored: Ignores = get_ignored();
                 if ignored.exists {
                     // should add all files except ignored and .riel
-                   /* if copy_to_area(fs::read_dir(".")
+                    let ignore_list: Vec<String> = ignored.ignored.iter().map(|x| x.to_string()).collect();
+                    let fixed_ignore_list: Vec<String> = ignore_list.iter().map(|x| format!("./{}", x)).collect();
+                    if copy_to_area(fs::read_dir(".")
                     .expect("Failed to read directory.")
                     .map(|x| x.unwrap().path().display().to_string())
-                        .filter(|x| !ignored.ignored.contains(x))
+                        .filter(|x| !fixed_ignore_list.contains(x))
                         .collect::<Vec<String>>()) 
                         {
                             // if copied
                             return true;
-                        } */
-                        todo!(".rielignore not implemented yet.");
+                        }
                 } else {
                     println!("Warning: No .rielignore file found. Adding all files.");
                     // should add all files outside of .riel
