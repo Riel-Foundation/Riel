@@ -1,8 +1,13 @@
 #![allow(unused_variables)]
 use std::env;
 use std::fs;
+use std::fs::File;
 use std::io::Write;
 use std::collections::{HashMap, HashSet};
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+use std::io;
+
 fn main() {
     const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
     const HELP: &str = "Welcome to Riel! Try help or --help for more information, or init / create to start a repository.";
@@ -75,8 +80,24 @@ fn mount_repo() -> () {
         ignore_file.write_all(buffer).expect("Failed to write to .rielignore file.");
     }
 }
+fn file_compress(f: File) -> File {
+    // TODO: Compress files to save space AND change this function to another file
+    return f;
+}
 fn commit(commit_args: Vec<String>) -> bool {
+    
     // TODO: Ensure CRDT systems works as well as possible and keeping redundancy to a minimum
+    let time = std::time::SystemTime::now();
+    let time_to_number = time.duration_since(std::time::UNIX_EPOCH).expect("Failed to get time for the hash.");
+    let number1 = time_to_number.as_secs();
+    let number2 = time_to_number.subsec_nanos() % 23 + 1 / 101;
+    let mut hasher = DefaultHasher::new();
+    (number1, number2).hash(&mut hasher);
+    let hash = hasher.finish();
+    save_commit_locally(hash);
+    let files_saved: Vec<String> = fs::read_dir(".riel/commits/local").expect("Failed to read directory.").map(|x| x.unwrap().path().display().to_string()).collect::<Vec<String>>();
+
+
     true
 }
 fn add_files(subcommands: Vec<String>) -> bool {
@@ -176,6 +197,47 @@ fn copy_to_area(items: Vec<String>) -> bool {
     }
     true
 }
+fn save_commit_locally(hash: u64) -> bool {
+    let hash_str = hash.to_string();
+    let hash_reduced = hash_str.chars().take(12).collect::<String>();
+    println!("Saving commit locally with hash {}.", hash_reduced);
+    let src_str: &str = ".riel/area";
+    let dest_str = format!(".riel/commits/local/{}", hash_reduced);
+    fs::create_dir(&dest_str).expect("Failed to create directory.");
+    copy_recursive(std::path::Path::new(src_str), std::path::Path::new(&dest_str));
+    fs::remove_dir_all(".riel/area").expect("Failed to remove area.");
+    true
+}
+
+fn copy_recursive(src: &std::path::Path, dest: &std::path::Path) -> bool {
+    if let Err(e) = copy_directory(src, dest) {
+        eprintln!("Failed to copy directory: {}", e);
+        return false;
+    }
+
+    true
+}
+fn copy_directory(src: &std::path::Path, dest: &std::path::Path) -> io::Result<()> {
+    if src.is_dir() {
+        fs::create_dir_all(dest)?;
+
+        for entry in fs::read_dir(src)? {
+            let entry = entry?;
+            let entry_type = entry.file_type()?;
+
+            let new_dest = dest.join(entry.file_name());
+
+            if entry_type.is_dir() {
+                copy_recursive(&entry.path(), &new_dest);
+            } else {
+                fs::copy(&entry.path(), &new_dest)?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
 
 #[derive(Debug, Clone)]
 struct Range {
