@@ -175,3 +175,11 @@ fn copy_to_area(items: Vec<String>) -> bool {
     }
     true
 }
+fn logoot(text_before: &str, text_after: &str) -> String {
+    return String::from("Not implemented yet.");
+}
+#[cfg(test)]
+#[test]
+fn test_logoot() {
+    assert_eq!(logoot("Hello", " World"), "Hello World");
+}
