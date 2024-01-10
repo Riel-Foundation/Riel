@@ -7,7 +7,6 @@ fn main() {
     const HELP: &str = "Welcome to Riel! Try help or --help for more information, or init / create to start a repository.";
     let args: Vec<String> = env::args().collect();
     let fixed_args = fix_args(args.clone());
-    // let riel = fixed_args[0].as_str();
     let command: &str = fixed_args[1].as_str();
     let command_args = args[2..].to_vec();
     match fixed_args.len() { // NOTE: This structure is bound to change
@@ -95,7 +94,7 @@ fn add_files(subcommands: Vec<String>) -> bool {
                 let ignored: Ignores = get_ignored();
                 if ignored.exists {
                     // should add all files except ignored and .riel
-                    let ignore_list: Vec<String> = ignored.ignored.iter().map(|x| x.to_string()).collect();
+                    let ignore_list: Vec<String> = ignored.files.iter().map(|x| x.to_string()).collect();
                     let fixed_ignore_list: Vec<String> = ignore_list.iter().map(|x| format!("./{}", x)).collect();
                     // TODO: Create a .rielignore parser
                     if copy_to_area(fs::read_dir(".")
@@ -139,7 +138,7 @@ fn check_repo() -> bool {
 }
 struct Ignores {
     exists: bool,
-    ignored: Vec<String>,
+    files: Vec<String>,
 }
 fn get_ignored() -> Ignores {
     let mut ignored: Vec<String> = Vec::new();
@@ -156,7 +155,7 @@ fn get_ignored() -> Ignores {
     }
     Ignores {
         exists,
-        ignored,
+        files: ignored,
     }
 }
 fn copy_to_area(items: Vec<String>) -> bool {
