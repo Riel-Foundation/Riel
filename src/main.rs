@@ -72,13 +72,11 @@ fn mount_repo() -> () {
     }
 }
 fn commit(commit_args: Vec<String>) -> bool {
-   /* let lower_args: Vec<String> = commit_args.iter().map(|x| x.to_lowercase()).collect();
-    let args: Vec<&str> = lower_args.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
-    if args.contains(&"-all") || args.contains(&"-A") {
-    }else {
-    }
-    false*/ 
-    todo!()
+   // Commiting is a little harder than adding
+   // If bad on time, we could just copy the area to the commits folder under a new hash
+   // The goal is to be able to pull using a CRDT (Conflict-free replicated data type) algorithm
+   // so we would do that separately
+   todo!()
 }
 fn add_files(subcommands: Vec<String>) -> bool {
     if !check_repo() {
