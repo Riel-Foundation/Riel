@@ -63,9 +63,12 @@ fn mount_repo() -> () {
     }
     // TODO: Probably externalize this function
     fn create_repo() -> () {
+        const subsequent_fail_message: &str = "Failed to create a directory, but .riel worked. Please check your storage & folder structure.";
         fs::create_dir(".riel").expect("Failed to create .riel directory, please check your permissions.");
-        fs::create_dir(".riel/commits").expect("Failed to create .riel/commits directory, but .riel worked. Please check your storage & folder structure.");
-        fs::create_dir(".riel/area").expect("Failed to create .riel/area directory, but .riel worked. Please check your storage & folder structure.");
+        fs::create_dir(".riel/commits").expect(subsequent_fail_message);
+        fs::create_dir(".riel/area").expect(subsequent_fail_message);
+        fs::create_dir(".riel/commits/local").expect(subsequent_fail_message);
+        fs::create_dir(".riel/commits/updated").expect(subsequent_fail_message);
         // create rielignore
         let mut ignore_file = fs::File::create("./.rielignore").expect("Failed to create .rielignore file.");
         let buffer: &[u8] = b"# This is a .rielignore file. It is used to ignore files when adding them to the repository. \n# Folders should be written like this: \n.git\ntest\nignorethisfolder \n";
@@ -73,11 +76,8 @@ fn mount_repo() -> () {
     }
 }
 fn commit(commit_args: Vec<String>) -> bool {
-   // Commiting is a little harder than adding
-   // If bad on time, we could just copy the area to the commits folder under a new hash
-   // The goal is to be able to pull using a CRDT (Conflict-free replicated data type) algorithm
-   // so we would do that separately
-   todo!()
+    // TODO: Ensure CRDT systems works as well as possible and keeping redundancy to a minimum
+    true
 }
 fn add_files(subcommands: Vec<String>) -> bool {
     if !check_repo() {
