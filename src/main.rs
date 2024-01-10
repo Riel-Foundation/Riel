@@ -177,63 +177,34 @@ fn copy_to_area(items: Vec<String>) -> bool {
     true
 }
 
-struct FileDifferencer {
-    end_lines: Vec<String>,
-    removed: HashMap<i32, String>,
+#[derive(Debug, Clone)]
+struct Range {
+    segments: Vec<(u32, u32)>
 }
-
-fn create_diff(text_before: &str, text_pulled: &str) -> FileDifferencer {
-    let lines_before: HashSet<_> = text_before.lines().collect();
-    let lines_pulled: HashSet<_> = text_pulled.lines().collect();
-
-    let mut differencer = FileDifferencer {
-        end_lines: Vec::new(),
-        removed: HashMap::new(),
-    };
-
-    let mut removes = 0;
-    for (i, line) in lines_before.iter().enumerate() {
-        if !lines_pulled.contains(line) {
-            differencer.removed.insert(removes, line.to_string());
-            removes += 1;
-        } else {
-            differencer.end_lines.push(line.to_string());
-        }
+impl Range {
+    fn contains(&self, value: u32) -> bool {
+        self.segments.iter().any(|&(start, end)| start <= value && value <= end)
     }
-
-    differencer
+    fn add(&mut self, start: u32, end: u32) -> bool {
+        if start > end {
+            return false;
+        }
+        if self.contains(start) || self.contains(end) {
+            eprintln!("Tried to add a range with overlapping values.");
+            return false;
+        }
+        self.segments.push((start, end));
+        true
+    }
 }
 
-fn apply_file_merging(text_before: &str, text_local: &str, text_pulled: &str) -> String {
-    let mut differencer: FileDifferencer = create_diff(text_before, text_pulled);
-
-    let lines_pulled_copy: HashSet<_> = differencer.end_lines.iter().collect();
-    let new_differencer_vector: Vec<_> = text_local
-        .lines()
-        .filter(|line| !lines_pulled_copy.contains(&line.to_string()))
-        .collect();
-
-    differencer.end_lines = new_differencer_vector.iter().map(|x| x.to_string()).collect();
-
-    let final_diff_vector: Vec<_> = differencer
-        .end_lines
-        .iter()
-        .filter(|line| !differencer.removed.values().any(|removed| line == &removed))
-        .map(|s| s.to_string())
-        .collect();
-
-    final_diff_vector.join("\n")
+struct CRDT { // Conflict-free replicated data type: https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type
+    changes: String,
+    lineRange: Range,
 }
-
-#[cfg(test)]
-#[test]
-fn test_logoot() {
-    assert_eq!(
-        apply_file_merging(
-            "print('helloworld');\nprint('hola')",
-            "print('helloworld')\nprint('holaChanged')",
-            "print('helloworld2')\n// newline\nprint('hola')"
-        ),
-        "print('helloworld2');\n// newline\nprint('holaChanged') --"
-    );
+struct CommitMetadata {
+    hash: String,
+    files: Vec<String>,
+    message: String,
+    CRDTdata: CRDT,
 }
