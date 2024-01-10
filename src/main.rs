@@ -2,7 +2,7 @@
 use std::env;
 use std::fs;
 use std::io::Write;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 fn main() {
     const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
     const HELP: &str = "Welcome to Riel! Try help or --help for more information, or init / create to start a repository.";
@@ -176,85 +176,60 @@ fn copy_to_area(items: Vec<String>) -> bool {
     }
     true
 }
+
 struct FileDifferencer {
     end_lines: Vec<String>,
-    removed: HashMap<i32, String>
+    removed: HashMap<i32, String>,
 }
-// TODO: This should be a separate file probably
-// (fileBefore, fileLocal, filePulled) ---> fileFinal
-fn apply_file_mergin(text_before: &str, text_local: &str, text_pulled: &str) -> String {
-    // TODO: Remember we need metadata on what the last commit was to implement this algorithm
-    let lines_before = text_before.lines().collect::<Vec<&str>>();
-    let lines_local = text_local.lines().collect::<Vec<&str>>();
-    let lines_pulled = text_pulled.lines().collect::<Vec<&str>>();
-    let mut differencer: FileDifferencer = 
-        FileDifferencer {
-            end_lines: Vec::new(),
-            removed: HashMap::new(),
-        };
-    let mut removes: i32 = 0;
+
+fn create_diff(text_before: &str, text_pulled: &str) -> FileDifferencer {
+    let lines_before: HashSet<_> = text_before.lines().collect();
+    let lines_pulled: HashSet<_> = text_pulled.lines().collect();
+
+    let mut differencer = FileDifferencer {
+        end_lines: Vec::new(),
+        removed: HashMap::new(),
+    };
+
+    let mut removes = 0;
     for (i, line) in lines_before.iter().enumerate() {
         if !lines_pulled.contains(line) {
             differencer.removed.insert(removes, line.to_string());
             removes += 1;
-        }else {
-            for j in 0..lines_pulled.len() {
-                if line == &lines_pulled[j] {
-                    differencer.end_lines.push(line.to_string());
-                    break;
-                }else {
-                    differencer.end_lines.push(lines_pulled[j].to_string());
-                }
-            }
+        } else {
+            differencer.end_lines.push(line.to_string());
         }
-    } // at this point differencer.end_lines should contain exactyly the same lines as lines_pulled
-    let lines_pulled_copy = differencer.end_lines.clone();
-    let mut new_differencer_vector: Vec<String> = Vec::new();
-    for (i, line) in lines_local.iter().enumerate() {
-        if !lines_pulled_copy.contains(&line.to_string()) {
-            new_differencer_vector.push(line.to_string());
-        }else {
-            for j in 0..lines_pulled_copy.len() {
-                if line == &lines_pulled_copy[j] {
-                    new_differencer_vector.push(line.to_string());
-                    break;
-                }else {
-                    new_differencer_vector.push(lines_pulled_copy[j].to_string());
-                }
-            }
-        }
+    }
 
-    }
-    differencer.end_lines = new_differencer_vector;
-    let mut final_diff_vector: Vec<String> = differencer.end_lines.clone();
-    for line in differencer.end_lines.iter() {
-        if line == "" {
-            continue;
-        }
-        for (i, line2) in differencer.removed.iter() {
-            if line == line2 {
-                for j in 0..final_diff_vector.len() {
-                    if final_diff_vector[j] == line.to_string() {
-                        final_diff_vector.remove(j);
-                    }
-                }
-                break;
-            }
-        }
-    }
-    let mut final_text = String::new();
-    for line in differencer.end_lines.iter() {
-        final_text.push_str(line);
-        final_text.push_str("\n");
-    }
-    final_text
+    differencer
+}
+
+fn apply_file_merging(text_before: &str, text_local: &str, text_pulled: &str) -> String {
+    let mut differencer: FileDifferencer = create_diff(text_before, text_pulled);
+
+    let lines_pulled_copy: HashSet<_> = differencer.end_lines.iter().collect();
+    let new_differencer_vector: Vec<_> = text_local
+        .lines()
+        .filter(|line| !lines_pulled_copy.contains(&line.to_string()))
+        .collect();
+
+    differencer.end_lines = new_differencer_vector.iter().map(|x| x.to_string()).collect();
+
+    let final_diff_vector: Vec<_> = differencer
+        .end_lines
+        .iter()
+        .filter(|line| !differencer.removed.values().any(|removed| line == &removed))
+        .map(|s| s.to_string())
+        .collect();
+
+    final_diff_vector.join("\n")
 }
 
 #[cfg(test)]
 #[test]
 fn test_logoot() {
     assert_eq!(
-        apply_file_mergin(
+        apply_file_merging(
             "print('helloworld');\nprint('hola')",
             "print('helloworld')\nprint('holaChanged')",
             "print('helloworld2')\n// newline\nprint('hola')"
