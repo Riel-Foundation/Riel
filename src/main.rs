@@ -1,4 +1,4 @@
-#![allow(unused_variables)]
+#![allow(unused_variables, dead_code, unused_imports, unused_mut, unused_assignments)]
 use std::env;
 use std::fs;
 use std::fs::File;
@@ -68,12 +68,12 @@ fn mount_repo() -> () {
     }
     // TODO: Probably externalize this function
     fn create_repo() -> () {
-        const subsequent_fail_message: &str = "Failed to create a directory, but .riel worked. Please check your storage & folder structure.";
+        const SUBSEQUENT_FAIL_MESSAGE: &str = "Failed to create a directory, but .riel worked. Please check your storage & folder structure.";
         fs::create_dir(".riel").expect("Failed to create .riel directory, please check your permissions.");
-        fs::create_dir(".riel/commits").expect(subsequent_fail_message);
-        fs::create_dir(".riel/area").expect(subsequent_fail_message);
-        fs::create_dir(".riel/commits/local").expect(subsequent_fail_message);
-        fs::create_dir(".riel/commits/updated").expect(subsequent_fail_message);
+        fs::create_dir(".riel/commits").expect(SUBSEQUENT_FAIL_MESSAGE);
+        fs::create_dir(".riel/area").expect(SUBSEQUENT_FAIL_MESSAGE);
+        fs::create_dir(".riel/commits/local").expect(SUBSEQUENT_FAIL_MESSAGE);
+        fs::create_dir(".riel/commits/updated").expect(SUBSEQUENT_FAIL_MESSAGE);
         // create rielignore
         let mut ignore_file = fs::File::create("./.rielignore").expect("Failed to create .rielignore file.");
         let buffer: &[u8] = b"# This is a .rielignore file. It is used to ignore files when adding them to the repository. \n# Folders should be written like this: \n.git\ntest\nignorethisfolder \n";
@@ -262,11 +262,11 @@ impl Range {
 
 struct CRDT { // Conflict-free replicated data type: https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type
     changes: String,
-    lineRange: Range,
+    line_range: Range,
 }
 struct CommitMetadata {
     hash: String,
     files: Vec<String>,
     message: String,
-    CRDTdata: CRDT,
+    crdtdata: CRDT,
 }
