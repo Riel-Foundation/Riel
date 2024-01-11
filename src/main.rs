@@ -10,63 +10,75 @@ use std::io;
 const RIEL_IGNORE_BUFFER: &[u8] = 
 b"# This is a .rielignore file. It is used to ignore files when adding them to the repository.
 \n# Folders should be written like this: \n.git\ntest\nignorethisfolder\nnode-modules";
+const COMMANDS: [&str; 4] = ["mount", "commit", "add", "sudo-destruct"];
+#[derive(Clone)]
+struct ParsedArgsObject {
+    command: String,
+    subcommands: Vec<String>,
+    options: Vec<String>,
+}
 fn main() {
     const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
     const HELP: &str = "Welcome to Riel! Try help or --help for more information, or init / create to start a repository.";
     let args: Vec<String> = env::args().collect();
-    let fixed_args = fix_args(args.clone());
-    let command: &str = {
-        if fixed_args.len() > 1 {
-            fixed_args[1].as_str()
-        } else {
-            ""
-        }
-    };
-    let command_args = {
-        if fixed_args.len() > 2 {
-            fixed_args[2..].to_vec()
-        } else {
-            Vec::new()
-        }
-    };
-    match fixed_args.len() { // NOTE: This structure is bound to change
-        1 => println!
-        ("{}", RIEL_WORKS),
-        2.. => match command {
-            "help" => println!("{}", HELP),
-            "--help" => println!("{}", HELP),
-            "init" => exec(command, command_args),
-            "mount" => exec("init", command_args),
-            "commit" => exec(command, command_args),
-            "add" => exec(command, command_args),
-            "sudo-destruct" => exec(command, command_args), // TODO: This shouldn't be this way when in production
-            _ => println!("{} is not a valid command. Try help or --help for more information.", command),
+    let rielless_args: Vec<String> = args.iter().filter(|x| !x.contains("riel")).map(|x| x.to_string()).collect();
+    let executable_args: ParsedArgsObject = parse_args(rielless_args);
+    let command: &str = executable_args.command.as_str();
+    let subcomands_and_options: ParsedArgsObject = executable_args.clone();
+    exec(command, subcomands_and_options)
+}
+fn parse_args(args: Vec<String>) -> ParsedArgsObject {
+    let mut command: String;
+    let options: Vec<String> =
+    args.iter()
+        .filter(|x| x.starts_with("-"))
+        .map(|x| x.to_string())
+        .collect();
+    let possible_commands: Vec<String> =
+    args.iter()
+        .filter(|x| !x.starts_with("-"))
+        .map(|x| x.to_string()).collect();
+    let coincidences: i16 = possible_commands.len() as i16;
+    match coincidences {
+        0 => {
+            panic!("No valid command found. Try help or --help for more information.");
         },
-        _ => println!("Failed to parse command."),
+        1.. => {
+            command = possible_commands[0].to_string();
+            if !COMMANDS.contains(&command.as_str()) {
+                panic!("Commands can only be preceded by options. Try help or --help for more information.");
+            }
+        },
+        _ => {
+            panic!("Too many commands found. Try help or --help for more information.");
         }
     }
-fn fix_args(args: Vec<String>) -> Vec<String> {
-   // let clean_args: Vec<String> = args.iter().map(|x| x.to_lowercase()).collect();
-    args.iter().map(|x| x.replace(" ", "")).collect()
+    let subcommands: Vec<String> = possible_commands.iter().skip(1).map(|x| x.to_string()).collect();
+    return ParsedArgsObject {
+        command,
+        subcommands,
+        options,
+    };
+    
 }
-fn exec(command: &str, subcommands: Vec<String>) -> () {
+fn exec(command: &str, args: ParsedArgsObject) -> () {
     match command {
-        "init" => mount_repo(), // for now, no subcommands,
+        "mount" => mount_repo(), // for now, no subcommands,
         "commit" => {
-            if commit(subcommands) {
+            if commit(args.subcommands) {
                 println!("Commited.");
             } else {
                 println!("Commit failed.");
             }},
         "add" =>  {
-            if add_files(subcommands) {
+            if add_files(args.subcommands) {
                 println!("Added file(s).");
             } else {
                 println!("Could not add all the files.");
             }
         },
         "sudo-destruct" => {
-            drop(subcommands);
+            drop(args.subcommands);
             println!("Riel is still in development. This command could be removed in the future.");
             fs::remove_dir_all(".riel").expect("Failed to remove .riel directory.");
         },

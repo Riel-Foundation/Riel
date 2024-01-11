@@ -1,7 +1,7 @@
-# This is a .rielignore file. It is used to ignore files when adding them to the repository. 
+# This is a .rielignore file. It is used to ignore files when adding them to the repository.
+
 # Folders should be written like this: 
 .git
 test
-ignorethisfolder 
-target
-binary
+ignorethisfolder
+node-modules
