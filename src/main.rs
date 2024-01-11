@@ -44,8 +44,8 @@ fn main() {
         }
     }
 fn fix_args(args: Vec<String>) -> Vec<String> {
-    let clean_args: Vec<String> = args.iter().map(|x| x.to_lowercase()).collect();
-    clean_args.iter().map(|x| x.replace(" ", "")).collect()
+   // let clean_args: Vec<String> = args.iter().map(|x| x.to_lowercase()).collect();
+    args.iter().map(|x| x.replace(" ", "")).collect()
 }
 fn exec(command: &str, subcommands: Vec<String>) -> () {
     match command {
@@ -118,11 +118,11 @@ fn add_files(subcommands: Vec<String>) -> bool {
         return false;
     }
     let checking_vec = subcommands.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
-    let should_commit_all: bool = checking_vec.contains(&"-all") || checking_vec.contains(&"-A");
+    let should_add_all: bool = checking_vec.contains(&"-all") || checking_vec.contains(&"-A");
     match subcommands.len() {
         0 => println!("No files specified."),
         1.. => {
-            if should_commit_all {
+            if should_add_all {
                 let ignored: Ignores = get_ignored();
                 if ignored.exists {
                     // should add all files except ignored and .riel
