@@ -13,8 +13,20 @@ fn main() {
     const HELP: &str = "Welcome to Riel! Try help or --help for more information, or init / create to start a repository.";
     let args: Vec<String> = env::args().collect();
     let fixed_args = fix_args(args.clone());
-    let command: &str = fixed_args[1].as_str();
-    let command_args = args[2..].to_vec();
+    let command: &str = {
+        if fixed_args.len() > 1 {
+            fixed_args[1].as_str()
+        } else {
+            ""
+        }
+    };
+    let command_args = {
+        if fixed_args.len() > 2 {
+            fixed_args[2..].to_vec()
+        } else {
+            Vec::new()
+        }
+    };
     match fixed_args.len() { // NOTE: This structure is bound to change
         1 => println!
         ("{}", RIEL_WORKS),
