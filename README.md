@@ -3,6 +3,7 @@ Version control system inspired by Conflict-Free Resolution Data-Types and Logoo
 
 State: Not ready for production yet
 
+Alpha to-do list:
 - [x] Initializing repositories
 - [x] Binary executable file (Try something like: ```cargo build --out-dir ./binary -Z unstable-options```)
 - [x] Adds, commits
