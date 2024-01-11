@@ -9,7 +9,7 @@ use std::hash::{Hash, Hasher};
 use std::io;
 const RIEL_IGNORE_BUFFER: &[u8] = 
 b"# This is a .rielignore file. It is used to ignore files when adding them to the repository.
-\n# Folders should be written like this: \n.git\ntest\nignorethisfolder\nnode-modules";
+\n# Folders should be written like this: \n.git\ntest\nignorethisfolder\nnode-modules\ntarget";
 const COMMANDS: [&str; 6] = ["help", "mount", "commit", "add", "sudo-destruct", "goto"];
 #[derive(Clone)]
 struct ParsedArgsObject {
@@ -72,7 +72,7 @@ fn exec(command: &str, args: ParsedArgsObject) -> () {
                 println!("Commit failed.");
             }},
         "add" =>  {
-            if add_files(args.subcommands) {
+            if add_files(args.subcommands, args.options) {
                 println!("Added file(s).");
             } else {
                 println!("Could not add all the files.");
@@ -111,8 +111,10 @@ fn mount_repo() -> () {
         fs::create_dir(".riel/commits/local").expect(SUBSEQUENT_FAIL_MESSAGE);
         fs::create_dir(".riel/commits/updated").expect(SUBSEQUENT_FAIL_MESSAGE);
         // create rielignore
-        let mut ignore_file = fs::File::create("./.rielignore").expect("Failed to create .rielignore file.");
-        ignore_file.write_all(RIEL_IGNORE_BUFFER).expect("Failed to write to .rielignore file.");
+        if !fs::metadata(".rielignore").is_ok() {
+            let mut ignore_file = fs::File::create("./.rielignore").expect("Failed to create .rielignore file.");
+            ignore_file.write_all(RIEL_IGNORE_BUFFER).expect("Failed to write to .rielignore file.");
+        }
     }
 }
 fn file_compress(f: File) -> File {
@@ -131,22 +133,18 @@ fn commit(commit_args: Vec<String>) -> bool {
     let number2 = time_to_number.subsec_nanos() % 23 + 1 / 101;
     let mut hasher = DefaultHasher::new();
     (number1, number2).hash(&mut hasher);
-    let hash = hasher.finish();
+    let hash: u64 = hasher.finish();
     save_commit_locally(hash);
-    let files_saved: Vec<String> = fs::read_dir(".riel/commits/local").expect("Failed to read directory.").map(|x| x.unwrap().path().display().to_string()).collect::<Vec<String>>();
-
-
     true
 }
-fn add_files(subcommands: Vec<String>) -> bool {
+fn add_files(subcommands: Vec<String>, options: Vec<String>) -> bool {
     //FIXME: Add a check to see if the files are already in the area
     if !check_repo() {
         println!("No valid Riel repository found. Try init or mount.");
         return false;
     }
-    let checking_vec = subcommands.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
-    let should_add_all: bool = checking_vec.contains(&"-all") || checking_vec.contains(&"-A");
-    match subcommands.len() {
+    let should_add_all: bool = options.contains(&("-all".to_string())) || options.contains(&("-A".to_string()));
+    match subcommands.len() + options.len() {
         0 => println!("No files specified."),
         1.. => {
             if should_add_all {
@@ -245,6 +243,7 @@ fn save_commit_locally(hash: u64) -> bool {
     fs::create_dir(&dest_str).expect("Failed to create directory.");
     copy_recursive(std::path::Path::new(src_str), std::path::Path::new(&dest_str));
     fs::remove_dir_all(".riel/area").expect("Failed to remove area.");
+    fs::create_dir(".riel/area").expect("Failed to create area.");
     true
 }
 fn prepare_goto(hash: String) -> bool {
@@ -254,7 +253,7 @@ fn prepare_goto(hash: String) -> bool {
         println!("Commit {} does not exist, check your hash or use riel load (Not developed yet)", hash_reduced); //FIXME
         return false;
     }
-    copy_recursive(std::path::Path::new(&dest_str), std::path::Path::new(".riel/area"));
+    copy_recursive(std::path::Path::new(&dest_str), std::path::Path::new("."));
     true
 }
 fn copy_recursive(src: &std::path::Path, dest: &std::path::Path) -> bool {
