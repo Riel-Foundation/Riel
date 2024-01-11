@@ -234,7 +234,6 @@ fn save_commit_locally(hash: u64) -> bool {
     fs::remove_dir_all(".riel/area").expect("Failed to remove area.");
     true
 }
-
 fn copy_recursive(src: &std::path::Path, dest: &std::path::Path) -> bool {
     if let Err(e) = copy_directory(src, dest) {
         eprintln!("Failed to copy directory: {}", e);
