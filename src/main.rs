@@ -262,8 +262,6 @@ fn copy_directory(src: &std::path::Path, dest: &std::path::Path) -> io::Result<(
 
     Ok(())
 }
-
-
 #[derive(Clone)]
 struct Range {
     segments: Vec<(u32, u32)>
@@ -274,11 +272,10 @@ impl Range {
     }
     fn add(&mut self, start: u32, end: u32) -> bool {
         if start > end {
-            return false;
+            panic!("Range's start was bigger than range's end.");
         }
         if self.contains(start) || self.contains(end) {
-            eprintln!("Tried to add a range with overlapping values.");
-            return false;
+            panic!("Tried to add a range with overlapping values.");
         }
         self.segments.push((start, end));
         true
@@ -328,4 +325,50 @@ struct CommitMetadata {
     files: Vec<String>,
     message: String,
     crdtdata: CRDT,
+}
+
+// Tests for Range & CRDT
+#[cfg(test)]
+#[test]
+fn test_range_contains() {
+    let r: Range = Range {
+        segments: vec![(0, 10), (20, 30), (40, 50)]
+    };
+    assert_eq!(r.contains(0), true);
+    assert_eq!(r.contains(10), true);
+    assert_eq!(r.contains(20), true);
+    assert_eq!(r.contains(30), true);
+    assert_eq!(r.contains(40), true);
+    assert_eq!(r.contains(50), true);
+    assert_eq!(r.contains(11), false);
+    assert_eq!(r.contains(19), false);
+    assert_eq!(r.contains(31), false);
+    assert_eq!(r.contains(39), false);
+    assert_eq!(r.contains(51), false);
+    assert_eq!(r.contains(100), false);
+    assert_eq!(r.contains(8), true);
+}
+#[test]
+#[should_panic(expected = "Tried to add a range with overlapping values.")]
+fn test_range_fail() {
+    let mut r: Range = Range {
+        segments: vec![(0, 10), (20, 30), (40, 50)]
+    };
+    r.add(8, 12);
+}
+#[test]
+#[should_panic(expected = "Tried to add a range with overlapping values.")]
+fn test_range_fail2() {
+    let mut r: Range = Range {
+        segments: vec![(0, 10), (20, 30), (40, 50)]
+    };
+    r.add(10, 21);
+}
+#[test]
+#[should_panic(expected = "Tried to add a range with overlapping values.")]
+fn test_range_fail3() {
+    let mut r: Range = Range {
+        segments: vec![(0, 10), (20, 30), (40, 50)]
+    };
+    r.add(11, 55);
 }
