@@ -10,7 +10,7 @@ use std::io;
 const RIEL_IGNORE_BUFFER: &[u8] = 
 b"# This is a .rielignore file. It is used to ignore files when adding them to the repository.
 \n# Folders should be written like this: \n.git\ntest\nignorethisfolder\nnode-modules";
-const COMMANDS: [&str; 4] = ["mount", "commit", "add", "sudo-destruct"];
+const COMMANDS: [&str; 6] = ["help", "mount", "commit", "add", "sudo-destruct", "goto"];
 #[derive(Clone)]
 struct ParsedArgsObject {
     command: String,
@@ -19,8 +19,12 @@ struct ParsedArgsObject {
 }
 fn main() {
     const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
-    const HELP: &str = "Welcome to Riel! Try help or --help for more information, or init / create to start a repository.";
+    const HELP: &str = "Welcome to Riel!\n Last help message update: 2024-1-11 by Yeray Romero\n Usage: riel ([options]) [command] [arguments/subcommands] \n\nCommands:\nhelp: Shows this message.\nmount: Mounts a Riel repository in the current directory.\ncommit: Commits changes to the repository.\nadd: Adds files to the repository.\nsudo-destruct: For developer purposes, deletes the repository.\ngoto: Goes to a commit, saving local files and not commiting anything yet.\n\nRiel is still in development.\n";
     let args: Vec<String> = env::args().collect();
+    if args.contains(&"--help".to_string()) || args.contains(&"help".to_string()) {
+        println!("{}", HELP); //TODO: Change this to exec a help command, handling something like riel help add
+        return;
+    }
     let rielless_args: Vec<String> = args.iter().filter(|x| !x.contains("riel")).map(|x| x.to_string()).collect();
     let executable_args: ParsedArgsObject = parse_args(rielless_args);
     let command: &str = executable_args.command.as_str();
@@ -43,14 +47,11 @@ fn parse_args(args: Vec<String>) -> ParsedArgsObject {
         0 => {
             panic!("No valid command found. Try help or --help for more information.");
         },
-        1.. => {
+        _ => {
             command = possible_commands[0].to_string();
             if !COMMANDS.contains(&command.as_str()) {
-                panic!("Commands can only be preceded by options. Try help or --help for more information.");
+                panic!("Commands can only be preceded by options. Try help (this is a command) or --help (this is a ''option'') for more information.");
             }
-        },
-        _ => {
-            panic!("Too many commands found. Try help or --help for more information.");
         }
     }
     let subcommands: Vec<String> = possible_commands.iter().skip(1).map(|x| x.to_string()).collect();
