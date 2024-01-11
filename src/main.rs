@@ -259,10 +259,44 @@ impl Range {
         true
     }
 }
-
-struct CRDT { // Conflict-free replicated data type: https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type
-    changes: String,
+#[derive(Debug, Clone)] // Would be nice to implement Copy
+/**
+ * Conflict-free replicated data type: https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type
+ */
+struct CRDT { 
+    sorting: u64,
+    changes: Vec<String>,
     line_range: Range,
+}
+impl CRDT {
+    
+    fn compare(&self, other: &CRDT) -> CRDT {
+        let clone1: CRDT = self.clone();
+        let clone2: CRDT = other.clone();
+        let they_are_equal_saver: u64 = self.sorting % 2;
+        let difference: bool = self.sorting > other.sorting;
+        let total_difference: u64 = self.sorting - other.sorting;
+        match total_difference {
+            0 => {
+                // they are equal
+                if they_are_equal_saver == 0 {
+                    return clone1;
+                } else {
+                    return clone2;
+                }
+            },
+            _ => {
+                // they are not equal
+                if difference {
+                    // self is greater
+                    return clone1;
+                } else {
+                    // other is greater
+                    return clone2;
+                }
+            }
+        }
+}
 }
 struct CommitMetadata {
     hash: String,
