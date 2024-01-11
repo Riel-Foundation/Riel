@@ -83,6 +83,15 @@ fn exec(command: &str, args: ParsedArgsObject) -> () {
             println!("Riel is still in development. This command could be removed in the future.");
             fs::remove_dir_all(".riel").expect("Failed to remove .riel directory.");
         },
+        "goto" => {
+            match args.subcommands.len() {
+                0 => println!("No commit specified."),
+                1 => {
+                    prepare_goto(args.subcommands[0].to_string());
+                }
+                _ => println!("Goto only accepts one argument."),
+            }
+        },
         _ => println!("Failed to parse command here.")
     }
 }
@@ -109,6 +118,9 @@ fn mount_repo() -> () {
 fn file_compress(f: File) -> File {
     // TODO: Compress files to save space AND change this function to another file
     return f;
+}
+fn file_decompress(fc: File) -> File  {
+    return fc;
 }
 fn commit(commit_args: Vec<String>) -> bool {
     
@@ -233,6 +245,16 @@ fn save_commit_locally(hash: u64) -> bool {
     fs::create_dir(&dest_str).expect("Failed to create directory.");
     copy_recursive(std::path::Path::new(src_str), std::path::Path::new(&dest_str));
     fs::remove_dir_all(".riel/area").expect("Failed to remove area.");
+    true
+}
+fn prepare_goto(hash: String) -> bool {
+    let hash_reduced = hash;
+    let dest_str = format!(".riel/commits/local/{}", hash_reduced);
+    if !fs::metadata(&dest_str).is_ok() {
+        println!("Commit {} does not exist, check your hash or use riel load (Not developed yet)", hash_reduced); //FIXME
+        return false;
+    }
+    copy_recursive(std::path::Path::new(&dest_str), std::path::Path::new(".riel/area"));
     true
 }
 fn copy_recursive(src: &std::path::Path, dest: &std::path::Path) -> bool {
