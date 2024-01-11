@@ -275,10 +275,33 @@ impl Range {
             panic!("Range's start was bigger than range's end.");
         }
         if self.contains(start) || self.contains(end) {
-            panic!("Tried to add a range with overlapping values.");
+            panic!("Tried to add a range with overlapping values. (Fast check)");
+        }
+        for any in start..end {
+            if self.contains(any) {
+                panic!("Tried to add a range with overlapping values. (Slow check)");
+            }
         }
         self.segments.push((start, end));
         true
+    }
+    fn get_min(&self) -> u32 {
+        let mut min: u32 = 0;
+        for &(start, _) in &self.segments {
+            if start < min {
+                min = start;
+            }
+        }
+        min
+    }
+    fn get_max(&self) -> u32 {
+        let mut max: u32 = 0;
+        for &(_, end) in &self.segments {
+            if end > max {
+                max = end;
+            }
+        }
+        max
     }
 }
 #[derive(Clone)] // Would be nice to implement Copy
@@ -291,17 +314,22 @@ struct CRDT {
     line_range: Range,
 }
 impl CRDT {
-    
     fn compare(&self, other: &CRDT) -> CRDT {
         let clone1: CRDT = self.clone();
         let clone2: CRDT = other.clone();
-        let they_are_equal_saver: u64 = self.sorting % 2;
         let difference: bool = self.sorting > other.sorting;
-        let total_difference: u64 = self.sorting - other.sorting;
+        let total_difference: i64 = self.sorting as i64 - other.sorting as i64;
         match total_difference {
             0 => {
                 // they are equal
-                if they_are_equal_saver == 0 {
+                let hash1: u64 = hash_string(&self.changes.join(""));
+                let hash2: u64 = hash_string(&other.changes.join(""));
+                fn hash_string(string: &str) -> u64 {
+                    let mut hasher = DefaultHasher::new();
+                    string.hash(&mut hasher);
+                    hasher.finish()
+                }
+                if hash1 > hash2 {
                     return clone1;
                 } else {
                     return clone2;
@@ -349,7 +377,7 @@ fn test_range_contains() {
     assert_eq!(r.contains(8), true);
 }
 #[test]
-#[should_panic(expected = "Tried to add a range with overlapping values.")]
+#[should_panic(expected = "Tried to add a range with overlapping values. (Fast check)")]
 fn test_range_fail() {
     let mut r: Range = Range {
         segments: vec![(0, 10), (20, 30), (40, 50)]
@@ -357,7 +385,7 @@ fn test_range_fail() {
     r.add(8, 12);
 }
 #[test]
-#[should_panic(expected = "Tried to add a range with overlapping values.")]
+#[should_panic(expected = "Tried to add a range with overlapping values. (Fast check)")]
 fn test_range_fail2() {
     let mut r: Range = Range {
         segments: vec![(0, 10), (20, 30), (40, 50)]
@@ -365,10 +393,94 @@ fn test_range_fail2() {
     r.add(10, 21);
 }
 #[test]
-#[should_panic(expected = "Tried to add a range with overlapping values.")]
+#[should_panic(expected = "Tried to add a range with overlapping values. (Slow check)")]
 fn test_range_fail3() {
     let mut r: Range = Range {
         segments: vec![(0, 10), (20, 30), (40, 50)]
     };
     r.add(11, 55);
 }
+#[test]
+#[should_panic(expected = "Range's start was bigger than range's end.")]
+fn test_range_all() {
+    let mut r: Range = Range {
+        segments: vec![(0, 10), (20, 30), (40, 50)]
+    };
+    assert_eq!(r.add(11, 19), true);
+    r.add(60, 75);
+    assert_eq!(r.get_min(), 0);
+    assert_eq!(r.get_max(), 75);
+    assert_eq!(r.contains(65), true);
+    assert_eq!(r.add(51, 59), true);
+    r.add(100, 80);
+}
+#[test]
+#[should_panic(expected = "Tried to add a range with overlapping values. (Fast check)")]
+fn test_range_same_values() {
+    let mut r: Range = Range {
+        segments: vec![(0, 10), (20, 30), (40, 50)]
+    };
+    r.add(10, 20);
+}
+// Testing CRDT
+#[test]
+fn testCRDT1() {
+    let crdt1: CRDT = CRDT {
+        sorting: 77,
+        changes: vec!["Hello".to_string(), "World".to_string()],
+        line_range: Range {
+            segments: vec![(0, 1), (2, 3)]
+        }
+    };
+    let crdt2: CRDT = CRDT {
+        sorting: 88,
+        changes: vec!["Hello".to_string(), "World".to_string()],
+        line_range: Range {
+            segments: vec![(0, 1), (2, 3)]
+        }
+    };
+    assert_eq!(crdt1.compare(&crdt2).sorting, 88);
+}
+#[test]
+fn testCRDT_reliability() {
+    let crdt1: CRDT = CRDT {
+        sorting: 99,
+        changes: vec!["Hello".to_string()],
+        line_range: Range {
+            segments: vec![(0, 1), (2, 3)]
+        }
+    };
+    let crdt2: CRDT = CRDT {
+        sorting: 99,
+        changes: vec!["One".to_string()],
+        line_range: Range {
+            segments: vec![(0, 1), (2, 3)]
+        }
+    };
+    assert_eq!(crdt1.compare(&crdt2).changes[0], crdt2.compare(&crdt1).changes[0]);
+}
+#[test]
+fn testCRDT_reliability2() {
+    let crdt1: CRDT = CRDT {
+        sorting: 199,
+        changes: vec!["h".to_string()],
+        line_range: Range {
+            segments: vec![(0, 1), (2, 3)]
+        }
+    };
+    let crdt2: CRDT = CRDT {
+        sorting: 199,
+        changes: vec!["1".to_string()],
+        line_range: Range {
+            segments: vec![(0, 1), (2, 3)]
+        }
+    };
+    assert_eq!(crdt1.compare(&crdt2).changes[0], crdt2.compare(&crdt1).changes[0]);
+} 
+// If last two test work, it's a matter of fact that if all commits have enough metadata,
+  // Conflicts shouldn't be too hard to avoid
+  // That does not mean code will not get broken, but it's easier for a developer
+  // to focus on fix broken code that to fix a broken Version Control System feature.
+  // Of course, it will be always better to not have two people working on the same file
+  // Just in case I will make a local copy of the file the user has local changes on
+  // TODO: This is the EOF but I don't like having comments in code, this should be removed.
