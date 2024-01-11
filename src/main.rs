@@ -424,7 +424,7 @@ fn test_range_same_values() {
 }
 // Testing CRDT
 #[test]
-fn testCRDT1() {
+fn test_crdt1() {
     let crdt1: CRDT = CRDT {
         sorting: 77,
         changes: vec!["Hello".to_string(), "World".to_string()],
@@ -442,7 +442,7 @@ fn testCRDT1() {
     assert_eq!(crdt1.compare(&crdt2).sorting, 88);
 }
 #[test]
-fn testCRDT_reliability() {
+fn test_crdt_reliability() {
     let crdt1: CRDT = CRDT {
         sorting: 99,
         changes: vec!["Hello".to_string()],
@@ -460,7 +460,7 @@ fn testCRDT_reliability() {
     assert_eq!(crdt1.compare(&crdt2).changes[0], crdt2.compare(&crdt1).changes[0]);
 }
 #[test]
-fn testCRDT_reliability2() {
+fn test_crdt_reliability2() {
     let crdt1: CRDT = CRDT {
         sorting: 199,
         changes: vec!["h".to_string()],
