@@ -239,7 +239,7 @@ fn copy_directory(src: &std::path::Path, dest: &std::path::Path) -> io::Result<(
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 struct Range {
     segments: Vec<(u32, u32)>
 }
@@ -259,7 +259,7 @@ impl Range {
         true
     }
 }
-#[derive(Debug, Clone)] // Would be nice to implement Copy
+#[derive(Clone)] // Would be nice to implement Copy
 /**
  * Conflict-free replicated data type: https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type
  */
