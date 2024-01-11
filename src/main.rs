@@ -7,7 +7,9 @@ use std::collections::{HashMap, HashSet};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io;
-
+const RIEL_IGNORE_BUFFER: &[u8] = 
+b"# This is a .rielignore file. It is used to ignore files when adding them to the repository.
+\n# Folders should be written like this: \n.git\ntest\nignorethisfolder\nnode-modules";
 fn main() {
     const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
     const HELP: &str = "Welcome to Riel! Try help or --help for more information, or init / create to start a repository.";
@@ -88,8 +90,7 @@ fn mount_repo() -> () {
         fs::create_dir(".riel/commits/updated").expect(SUBSEQUENT_FAIL_MESSAGE);
         // create rielignore
         let mut ignore_file = fs::File::create("./.rielignore").expect("Failed to create .rielignore file.");
-        let buffer: &[u8] = b"# This is a .rielignore file. It is used to ignore files when adding them to the repository. \n# Folders should be written like this: \n.git\ntest\nignorethisfolder \n";
-        ignore_file.write_all(buffer).expect("Failed to write to .rielignore file.");
+        ignore_file.write_all(RIEL_IGNORE_BUFFER).expect("Failed to write to .rielignore file.");
     }
 }
 fn file_compress(f: File) -> File {
@@ -113,6 +114,7 @@ fn commit(commit_args: Vec<String>) -> bool {
     true
 }
 fn add_files(subcommands: Vec<String>) -> bool {
+    //FIXME: Add a check to see if the files are already in the area
     if !check_repo() {
         println!("No valid Riel repository found. Try init or mount.");
         return false;
