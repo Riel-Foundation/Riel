@@ -237,14 +237,34 @@ fn copy_to_area(items: Vec<String>) -> bool {
 fn save_commit_locally(hash: u64) -> bool {
     let hash_str = hash.to_string();
     let hash_reduced = hash_str.chars().take(12).collect::<String>();
+    let files_as_strings: Vec<String> = fs::read_dir(".riel/area")
+        .expect("Failed to read directory.")
+        .map(|x| x.unwrap().path().display().to_string())
+        .collect::<Vec<String>>();
     println!("Saving commit locally with hash {}.", hash_reduced);
+    area_into_commit(&hash_reduced);
+    let data: CommitMetadata = CommitMetadata {
+        hash: hash_reduced,
+        files: files_as_strings,
+        message: "Riel does not support commit messages yet.".to_string(),
+        crdtdata: CRDT {
+            sorting: 0,
+            changes: Vec::new(),
+            line_range: Range { //TODO
+                segments: Vec::new(),
+            }
+        }
+    };
+    true
+}
+
+fn area_into_commit(hash: &str) {
     let src_str: &str = ".riel/area";
-    let dest_str = format!(".riel/commits/local/{}", hash_reduced);
+    let dest_str = format!(".riel/commits/local/{}", hash);
     fs::create_dir(&dest_str).expect("Failed to create directory.");
     copy_recursive(std::path::Path::new(src_str), std::path::Path::new(&dest_str));
     fs::remove_dir_all(".riel/area").expect("Failed to remove area.");
     fs::create_dir(".riel/area").expect("Failed to create area.");
-    true
 }
 fn prepare_goto(hash: String) -> bool {
     let hash_reduced = hash;
