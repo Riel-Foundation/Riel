@@ -244,7 +244,7 @@ fn save_commit_locally(hash: u64) -> bool {
     println!("Saving commit locally with hash {}.", hash_reduced);
     area_into_commit(&hash_reduced);
     let data: CommitMetadata = 
-    CommitMetadata::new(hash.to_string(),
+    CommitMetadata::new(hash,
     "riel does not support messages yet".to_string(), 
     files_as_strings);
     true
@@ -301,12 +301,15 @@ struct Range {
     segments: Vec<(u32, u32)>
 }
 impl Range {
-    fn contains(&self, value: u32) -> bool {
-        self.segments.iter().any(|&(start, end)| start <= value && value <= end)
+    fn contains(&self, x: u32) -> bool {
+        self.segments.iter().any(|&(start, end)| start < x && x < end)
     }
     fn add(&mut self, start: u32, end: u32) -> bool {
         if start > end {
             panic!("Range's start was bigger than range's end.");
+        }
+        if self.segments.iter().any(|&(s, e)| e == start || s == end) {
+            panic!("Ranges are not allowed to have the same start or end.");
         }
         if self.contains(start) || self.contains(end) {
             panic!("Tried to add a range with overlapping values. (Fast check)");
@@ -388,10 +391,10 @@ struct CommitMetadata {
     crdtdata: HashMap<String, CRDT>,
 }
 impl CommitMetadata {
-    fn new(hash: String, message: String, files: Vec<String>) -> CommitMetadata {
+    fn new(hash_as_num: u64, message: String, files: Vec<String>) -> CommitMetadata {
         let mut crdtdata: HashMap<String, CRDT> = HashMap::new();
         for file in files {
-            let changes = crdt_get_changes(&file);
+            let changes = crdt_get_changes(hash_as_num, &file);
             if changes.file_found && changes.file_changed {
                 if changes.data.is_some() {
                     crdtdata.insert(file, changes.data.unwrap());
@@ -411,7 +414,7 @@ impl CommitMetadata {
             }
         }
         CommitMetadata {
-            hash,
+            hash: hash_as_num.to_string(),
             message,
             crdtdata,
         }
@@ -422,8 +425,61 @@ struct CrdtFileStateObject {
     file_changed: bool,
     data: Option<CRDT>,
 }
-fn crdt_get_changes(file: &str) -> CrdtFileStateObject {
-    todo!()
+fn crdt_get_changes(commit_hash: u64, file: &str) -> CrdtFileStateObject {
+    let mut file_found: bool = false;
+    let mut file_changed: bool = false;
+    let mut data: Option<CRDT> = None;
+
+    let head_files = fs::read_dir(".riel/commits/local/.head").expect("Failed to read directory.");
+    let head_files_as_strings: Vec<String> = head_files.map(|x| x.unwrap().path().display().to_string()).collect::<Vec<String>>();
+    if !head_files_as_strings.contains(&file.to_string()) {
+        return CrdtFileStateObject {
+            file_found: false,
+            file_changed,
+            data,
+        }
+    }else {
+        file_found = true;
+        let lines_head: String = fs::read_to_string(format!(".riel/commits/local/.head/{}", file)).expect("Failed to read file in .head.");
+        let lines_file: String = fs::read_to_string(format!(".riel/commits/local/{}/{}", commit_hash, file)).expect("Failed to read file.");
+        if !(lines_head == lines_file) {
+            file_changed = true;
+            let mut crdt: CRDT = CRDT {
+                sorting: 0,
+                changes: Vec::new(),
+                line_range: Range {
+                    segments: vec![(0, 1)]
+                }
+            };
+            let mut lines_head_vec: Vec<&str> = lines_head.lines().collect();
+            let mut lines_file_vec: Vec<&str> = lines_file.lines().collect();
+            
+            let differences =
+                lines_file_vec.iter()
+                .filter(|x| ! (x == && ""))
+                .filter(|x| !lines_head_vec.contains(x));
+            for difference in differences {
+                crdt.changes.push(difference.to_string());
+            }
+            let segments = get_different_segments_lines(&lines_head_vec, &lines_file_vec);
+        }
+    }
+
+    CrdtFileStateObject {
+        file_found,
+        file_changed,
+        data,
+    }
+}
+fn get_different_segments_lines(before: &Vec<&str>, after: &Vec<&str>) -> Vec<(u32, u32)> {
+    let mut segments: Vec<(u32, u32)> = Vec::new();
+    let mut line: u32 = 0;
+    let mut start: u32 = 0;
+    let mut end: u32 = 0;
+    for l in after {
+        todo!(); // FIXME
+    }
+    segments
 }
 // Tests for Range & CRDT 
 #[cfg(test)]
@@ -434,12 +490,12 @@ mod test {
     let r: Range = Range {
         segments: vec![(0, 10), (20, 30), (40, 50)]
     };
-    assert_eq!(r.contains(0), true);
-    assert_eq!(r.contains(10), true);
-    assert_eq!(r.contains(20), true);
-    assert_eq!(r.contains(30), true);
-    assert_eq!(r.contains(40), true);
-    assert_eq!(r.contains(50), true);
+    assert_eq!(r.contains(0), false);
+    assert_eq!(r.contains(10), false);
+    assert_eq!(r.contains(20), false);
+    assert_eq!(r.contains(30), false);
+    assert_eq!(r.contains(40), false);
+    assert_eq!(r.contains(50), false);
     assert_eq!(r.contains(11), false);
     assert_eq!(r.contains(19), false);
     assert_eq!(r.contains(31), false);
@@ -462,7 +518,7 @@ fn test_range_fail2() {
     let mut r: Range = Range {
         segments: vec![(0, 10), (20, 30), (40, 50)]
     };
-    r.add(10, 21);
+    r.add(11, 21);
 }
 #[test]
 #[should_panic(expected = "Tried to add a range with overlapping values. (Slow check)")]
@@ -487,7 +543,7 @@ fn test_range_all() {
     r.add(100, 80);
 }
 #[test]
-#[should_panic(expected = "Tried to add a range with overlapping values. (Fast check)")]
+#[should_panic(expected = "Ranges are not allowed to have the same start or end.")]
 fn test_range_same_values() {
     let mut r: Range = Range {
         segments: vec![(0, 10), (20, 30), (40, 50)]
