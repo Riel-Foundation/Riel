@@ -243,18 +243,10 @@ fn save_commit_locally(hash: u64) -> bool {
         .collect::<Vec<String>>();
     println!("Saving commit locally with hash {}.", hash_reduced);
     area_into_commit(&hash_reduced);
-    let data: CommitMetadata = CommitMetadata {
-        hash: hash_reduced,
-        files: files_as_strings,
-        message: "Riel does not support commit messages yet.".to_string(),
-        crdtdata: CRDT {
-            sorting: 0,
-            changes: Vec::new(),
-            line_range: Range { //TODO
-                segments: Vec::new(),
-            }
-        }
-    };
+    let data: CommitMetadata = 
+    CommitMetadata::new(hash.to_string(),
+    "riel does not support messages yet".to_string(), 
+    files_as_strings);
     true
 }
 
@@ -392,11 +384,47 @@ impl CRDT {
 }
 struct CommitMetadata {
     hash: String,
-    files: Vec<String>,
     message: String,
-    crdtdata: CRDT,
+    crdtdata: HashMap<String, CRDT>,
 }
-
+impl CommitMetadata {
+    fn new(hash: String, message: String, files: Vec<String>) -> CommitMetadata {
+        let mut crdtdata: HashMap<String, CRDT> = HashMap::new();
+        for file in files {
+            let changes = crdt_get_changes(&file);
+            if changes.file_found && changes.file_changed {
+                if changes.data.is_some() {
+                    crdtdata.insert(file, changes.data.unwrap());
+                }else {
+                    panic!("Failed to get changes for file {}.", file);
+                }
+            }else {
+                if !changes.file_found {
+                    crdtdata.insert(file, CRDT {
+                        sorting: 0,
+                        changes: Vec::new(),
+                        line_range: Range {
+                            segments: vec![(0, 1)]
+                        }
+                    });
+                }
+            }
+        }
+        CommitMetadata {
+            hash,
+            message,
+            crdtdata,
+        }
+    }
+}
+struct CrdtFileStateObject {
+    file_found: bool,
+    file_changed: bool,
+    data: Option<CRDT>,
+}
+fn crdt_get_changes(file: &str) -> CrdtFileStateObject {
+    todo!()
+}
 // Tests for Range & CRDT 
 #[cfg(test)]
 mod test {
