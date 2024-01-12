@@ -377,10 +377,12 @@ struct CommitMetadata {
     crdtdata: CRDT,
 }
 
-// Tests for Range & CRDT
+// Tests for Range & CRDT 
 #[cfg(test)]
-#[test]
-fn test_range_contains() {
+mod test {
+    use super::*;
+    #[test]
+    fn test_range_contains() {
     let r: Range = Range {
         segments: vec![(0, 10), (20, 30), (40, 50)]
     };
@@ -499,6 +501,8 @@ fn test_crdt_reliability2() {
     };
     assert_eq!(crdt1.compare(&crdt2).changes[0], crdt2.compare(&crdt1).changes[0]);
 } 
+}
+
 // If last two test work, it's a matter of fact that if all commits have enough metadata,
   // Conflicts shouldn't be too hard to avoid
   // That does not mean code will not get broken, but it's easier for a developer
