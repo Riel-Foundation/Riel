@@ -7,10 +7,12 @@ use std::collections::{HashMap, HashSet};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io;
+mod filemerger;
 const RIEL_IGNORE_BUFFER: &[u8] = 
 b"# This is a .rielignore file. It is used to ignore files when adding them to the repository.
 \n# Folders should be written like this: \n.git\ntest\nignorethisfolder\nnode-modules\ntarget";
 const COMMANDS: [&str; 6] = ["help", "mount", "commit", "add", "sudo-destruct", "goto"];
+const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
 #[derive(Clone)]
 struct ParsedArgsObject {
     command: String,
@@ -18,7 +20,7 @@ struct ParsedArgsObject {
     options: Vec<String>,
 }
 fn main() {
-    const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
+    // filemerger::testing();
     const HELP: &str = "Welcome to Riel!\n Last help message update: 2024-1-11 by Yeray Romero\n Usage: riel ([options]) [command] [arguments/subcommands] \n\nCommands:\nhelp: Shows this message.\nmount: Mounts a Riel repository in the current directory.\ncommit: Commits changes to the repository.\nadd: Adds files to the repository.\nsudo-destruct: For developer purposes, deletes the repository.\ngoto: Goes to a commit, saving local files and not commiting anything yet.\n\nRiel is still in development.\n";
     let args: Vec<String> = env::args().collect();
     if args.contains(&"--help".to_string()) || args.contains(&"help".to_string()) {
@@ -26,13 +28,18 @@ fn main() {
         return;
     }
     let rielless_args: Vec<String> = args.iter().filter(|x| !x.contains("riel")).map(|x| x.to_string()).collect();
-    let executable_args: ParsedArgsObject = parse_args(rielless_args);
-    let command: &str = executable_args.command.as_str();
-    let subcomands_and_options: ParsedArgsObject = executable_args.clone();
-    exec(command, subcomands_and_options)
+    let executable_args: Option<ParsedArgsObject> = parse_args(rielless_args);
+    if executable_args.is_none() {
+        return;
+    }else {
+        let executable_args: ParsedArgsObject = executable_args.unwrap();
+        let command: &str = executable_args.command.as_str();
+        let subcomands_and_options: ParsedArgsObject = executable_args.clone();
+        exec(command, subcomands_and_options)
+    }
 }
-fn parse_args(args: Vec<String>) -> ParsedArgsObject {
-    let mut command: String;
+fn parse_args(args: Vec<String>) -> Option<ParsedArgsObject> {
+    let mut command: String = String::new();
     let options: Vec<String> =
     args.iter()
         .filter(|x| x.starts_with("-"))
@@ -45,7 +52,8 @@ fn parse_args(args: Vec<String>) -> ParsedArgsObject {
     let coincidences: i16 = possible_commands.len() as i16;
     match coincidences {
         0 => {
-            panic!("No valid command found. Try help or --help for more information.");
+            println!("{}", RIEL_WORKS);
+            return None;
         },
         _ => {
             command = possible_commands[0].to_string();
@@ -55,11 +63,11 @@ fn parse_args(args: Vec<String>) -> ParsedArgsObject {
         }
     }
     let subcommands: Vec<String> = possible_commands.iter().skip(1).map(|x| x.to_string()).collect();
-    return ParsedArgsObject {
+    return Some(ParsedArgsObject {
         command,
         subcommands,
         options,
-    };
+    });
     
 }
 fn exec(command: &str, args: ParsedArgsObject) -> () {
@@ -193,7 +201,7 @@ fn check_repo() -> bool {
     fs::metadata(".riel/commits").is_ok() &&
     fs::metadata(".riel/area").is_ok()
 }
-struct Ignores {
+pub struct Ignores {
     exists: bool,
     files: Vec<String>,
 }
@@ -297,7 +305,7 @@ fn copy_directory(src: &std::path::Path, dest: &std::path::Path) -> io::Result<(
     Ok(())
 }
 #[derive(Clone)]
-struct Range {
+pub struct Range {
     segments: Vec<(u32, u32)>
 }
 impl Range {
@@ -345,7 +353,7 @@ impl Range {
 /**
  * Conflict-free replicated data type: https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type
  */
-struct CRDT { 
+pub struct CRDT { 
     sorting: u64,
     changes: Vec<String>,
     line_range: Range,
@@ -385,7 +393,7 @@ impl CRDT {
         }
 }
 }
-struct CommitMetadata {
+pub struct CommitMetadata {
     hash: String,
     message: String,
     crdtdata: HashMap<String, CRDT>,
