@@ -58,7 +58,8 @@ fn parse_args(args: Vec<String>) -> Option<ParsedArgsObject> {
         _ => {
             command = possible_commands[0].to_string();
             if !COMMANDS.contains(&command.as_str()) {
-                panic!("Commands can only be preceded by options. Try help (this is a command) or --help (this is a ''option'') for more information.");
+                println!("Commands can only be preceded by options. Try help (this is a command) or --help (this is an ''option'') for more information.");
+                return None;
             }
         }
     }
