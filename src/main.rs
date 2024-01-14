@@ -8,17 +8,15 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io;
 mod filemerger;
+mod args_parser;
+use args_parser::{parse_args, ParsedArgsObject};
 const RIEL_IGNORE_BUFFER: &[u8] = 
 b"# This is a .rielignore file. It is used to ignore files when adding them to the repository.
 \n# Folders should be written like this: \n.git\ntest\nignorethisfolder\nnode-modules\ntarget";
 const COMMANDS: [&str; 6] = ["help", "mount", "commit", "add", "sudo-destruct", "goto"];
 const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
-#[derive(Clone)]
-struct ParsedArgsObject {
-    command: String,
-    subcommands: Vec<String>,
-    options: Vec<String>,
-}
+
+
 fn main() {
     // filemerger::testing();
     const HELP: &str = "Welcome to Riel!\n Last help message update: 2024-1-11 by Yeray Romero\n Usage: riel ([options]) [command] [arguments/subcommands] \n\nCommands:\nhelp: Shows this message.\nmount: Mounts a Riel repository in the current directory.\ncommit: Commits changes to the repository.\nadd: Adds files to the repository.\nsudo-destruct: For developer purposes, deletes the repository.\ngoto: Goes to a commit, saving local files and not commiting anything yet.\n\nRiel is still in development.\n";
@@ -28,75 +26,43 @@ fn main() {
         return;
     }
     let rielless_args: Vec<String> = args.iter().filter(|x| !x.contains("riel")).map(|x| x.to_string()).collect();
-    let executable_args: Option<ParsedArgsObject> = parse_args(rielless_args);
+    let executable_args: Option<ParsedArgsObject> = args_parser::parse_args(rielless_args);
     if executable_args.is_none() {
         return;
     }else {
         let executable_args: ParsedArgsObject = executable_args.unwrap();
-        let command: &str = executable_args.command.as_str();
+        let command: String = executable_args.command();
         let subcomands_and_options: ParsedArgsObject = executable_args.clone();
-        exec(command, subcomands_and_options)
+        exec(&command, subcomands_and_options)
     }
 }
-fn parse_args(args: Vec<String>) -> Option<ParsedArgsObject> {
-    let mut command: String = String::new();
-    let options: Vec<String> =
-    args.iter()
-        .filter(|x| x.starts_with("-"))
-        .map(|x| x.to_string())
-        .collect();
-    let possible_commands: Vec<String> =
-    args.iter()
-        .filter(|x| !x.starts_with("-"))
-        .map(|x| x.to_string()).collect();
-    let coincidences: i16 = possible_commands.len() as i16;
-    match coincidences {
-        0 => {
-            println!("{}", RIEL_WORKS);
-            return None;
-        },
-        _ => {
-            command = possible_commands[0].to_string();
-            if !COMMANDS.contains(&command.as_str()) {
-                println!("Commands can only be preceded by options. Try help (this is a command) or --help (this is an ''option'') for more information.");
-                return None;
-            }
-        }
-    }
-    let subcommands: Vec<String> = possible_commands.iter().skip(1).map(|x| x.to_string()).collect();
-    return Some(ParsedArgsObject {
-        command,
-        subcommands,
-        options,
-    });
-    
-}
+
 fn exec(command: &str, args: ParsedArgsObject) -> () {
     match command {
         "mount" => mount_repo(), // for now, no subcommands,
         "commit" => {
-            if commit(args.subcommands) {
+            if commit(args.subcommands()) {
                 println!("Commited.");
             } else {
                 println!("Commit failed.");
             }},
         "add" =>  {
-            if add_files(args.subcommands, args.options) {
+            if add_files(args.subcommands(), args.options()) {
                 println!("Added file(s).");
             } else {
                 println!("Could not add all the files.");
             }
         },
         "sudo-destruct" => {
-            drop(args.subcommands);
+            drop(args.subcommands());
             println!("Riel is still in development. This command could be removed in the future.");
             fs::remove_dir_all(".riel").expect("Failed to remove .riel directory.");
         },
         "goto" => {
-            match args.subcommands.len() {
+            match args.subcommands().len() {
                 0 => println!("No commit specified."),
                 1 => {
-                    prepare_goto(args.subcommands[0].to_string());
+                    prepare_goto(args.subcommands()[0].to_string());
                 }
                 _ => println!("Goto only accepts one argument."),
             }
