@@ -274,48 +274,6 @@ fn copy_directory(src: &std::path::Path, dest: &std::path::Path) -> io::Result<(
 
     Ok(())
 }
-fn crdt_get_changes(commit_hash: u64, file: &str) -> CrdtFileStateObject {
-    let mut file_found: bool = false;
-    let mut file_changed: bool = false;
-    let mut data: Option<CRDT> = None;
-
-    let head_files = fs::read_dir(".riel/commits/local/.head").expect("Failed to read directory.");
-    let head_files_as_strings: Vec<String> = head_files.map(|x| x.unwrap().path().display().to_string()).collect::<Vec<String>>();
-    if !head_files_as_strings.contains(&file.to_string()) {
-        return CrdtFileStateObject::new(file_found, file_changed, data);
-    }else {
-        file_found = true;
-        let lines_head: String = fs::read_to_string(format!(".riel/commits/local/.head/{}", file)).expect("Failed to read file in .head.");
-        let lines_file: String = fs::read_to_string(format!(".riel/commits/local/{}/{}", commit_hash, file)).expect("Failed to read file.");
-        if !(lines_head == lines_file) {
-            file_changed = true;
-            let mut crdt: CRDT = CRDT {
-                sorting: 0,
-                changes: Vec::new(),
-                line_range: Range {
-                    segments: vec![(0, 1)]
-                }
-            };
-            let mut lines_head_vec: Vec<&str> = lines_head.lines().collect();
-            let mut lines_file_vec: Vec<&str> = lines_file.lines().collect();
-            
-            let differences =
-                lines_file_vec.iter()
-                .filter(|x| ! (x == && ""))
-                .filter(|x| !lines_head_vec.contains(x));
-            for difference in differences {
-                crdt.changes.push(difference.to_string());
-            }
-            let segments = get_different_segments_lines(&lines_head_vec, &lines_file_vec);
-        }
-    }
-
-    CrdtFileStateObject {
-        file_found,
-        file_changed,
-        data,
-    }
-}
 // Tests for Range & CRDT 
 #[cfg(test)]
 mod test {
