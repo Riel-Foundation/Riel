@@ -8,6 +8,7 @@ Alpha to-do list:
 - [x] Binary executable file (Try something like: ```cargo build --out-dir ./binary -Z unstable-options```)
 - [x] Adds, commits
 - [X] Goto, rollback
+- [ ] Author metadata
 - [ ] Thrust (push), load (pull) from remotes
 - [ ] CRDT algorithm implemented where possible
 

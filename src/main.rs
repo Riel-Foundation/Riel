@@ -366,6 +366,7 @@ pub struct CommitMetadata {
     hash: String,
     message: String,
     crdtdata: HashMap<String, CRDT>,
+    author: String,
 }
 impl CommitMetadata {
     fn new(hash_as_num: u64, message: String, files: Vec<String>) -> CommitMetadata {
@@ -394,6 +395,7 @@ impl CommitMetadata {
             hash: hash_as_num.to_string(),
             message,
             crdtdata,
+            author: "000-Unsigned yet".to_string(),
         }
     }
 }
