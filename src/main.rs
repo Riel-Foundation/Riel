@@ -7,7 +7,8 @@ use std::collections::{HashMap, HashSet};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io;
-mod filemerger;
+mod mergers;
+use mergers::filemerger::{CommitMetadata, CrdtFileStateObject, CRDT, Range};
 mod args_parser;
 use args_parser::{parse_args, ParsedArgsObject};
 const RIEL_IGNORE_BUFFER: &[u8] = 
@@ -273,137 +274,8 @@ fn copy_directory(src: &std::path::Path, dest: &std::path::Path) -> io::Result<(
 
     Ok(())
 }
-#[derive(Clone)]
-pub struct Range {
-    segments: Vec<(u32, u32)>
-}
-impl Range {
-    fn contains(&self, x: u32) -> bool {
-        self.segments.iter().any(|&(start, end)| start < x && x < end)
-    }
-    fn add(&mut self, start: u32, end: u32) -> bool {
-        if start > end {
-            panic!("Range's start was bigger than range's end.");
-        }
-        if self.segments.iter().any(|&(s, e)| e == start || s == end) {
-            panic!("Ranges are not allowed to have the same start or end.");
-        }
-        if self.contains(start) || self.contains(end) {
-            panic!("Tried to add a range with overlapping values. (Fast check)");
-        }
-        for any in start..end {
-            if self.contains(any) {
-                panic!("Tried to add a range with overlapping values. (Slow check)");
-            }
-        }
-        self.segments.push((start, end));
-        true
-    }
-    fn get_min(&self) -> u32 {
-        let mut min: u32 = 0;
-        for &(start, _) in &self.segments {
-            if start < min {
-                min = start;
-            }
-        }
-        min
-    }
-    fn get_max(&self) -> u32 {
-        let mut max: u32 = 0;
-        for &(_, end) in &self.segments {
-            if end > max {
-                max = end;
-            }
-        }
-        max
-    }
-}
-#[derive(Clone)] // Would be nice to implement Copy
-/**
- * Conflict-free replicated data type: https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type
- */
-pub struct CRDT { 
-    sorting: u64,
-    changes: Vec<String>,
-    line_range: Range,
-}
-impl CRDT {
-    fn compare(&self, other: &CRDT) -> CRDT {
-        let clone1: CRDT = self.clone();
-        let clone2: CRDT = other.clone();
-        let difference: bool = self.sorting > other.sorting;
-        let total_difference: i64 = self.sorting as i64 - other.sorting as i64;
-        match total_difference {
-            0 => {
-                // they are equal
-                let hash1: u64 = hash_string(&self.changes.join(""));
-                let hash2: u64 = hash_string(&other.changes.join(""));
-                fn hash_string(string: &str) -> u64 {
-                    let mut hasher = DefaultHasher::new();
-                    string.hash(&mut hasher);
-                    hasher.finish()
-                }
-                if hash1 > hash2 {
-                    return clone1;
-                } else {
-                    return clone2;
-                }
-            },
-            _ => {
-                // they are not equal
-                if difference {
-                    // self is greater
-                    return clone1;
-                } else {
-                    // other is greater
-                    return clone2;
-                }
-            }
-        }
-}
-}
-pub struct CommitMetadata {
-    hash: String,
-    message: String,
-    crdtdata: HashMap<String, CRDT>,
-    author: String,
-}
-impl CommitMetadata {
-    fn new(hash_as_num: u64, message: String, files: Vec<String>) -> CommitMetadata {
-        let mut crdtdata: HashMap<String, CRDT> = HashMap::new();
-        for file in files {
-            let changes = crdt_get_changes(hash_as_num, &file);
-            if changes.file_found && changes.file_changed {
-                if changes.data.is_some() {
-                    crdtdata.insert(file, changes.data.unwrap());
-                }else {
-                    panic!("Failed to get changes for file {}.", file);
-                }
-            }else {
-                if !changes.file_found {
-                    crdtdata.insert(file, CRDT {
-                        sorting: 0,
-                        changes: Vec::new(),
-                        line_range: Range {
-                            segments: vec![(0, 1)]
-                        }
-                    });
-                }
-            }
-        }
-        CommitMetadata {
-            hash: hash_as_num.to_string(),
-            message,
-            crdtdata,
-            author: "000-Unsigned yet".to_string(),
-        }
-    }
-}
-struct CrdtFileStateObject {
-    file_found: bool,
-    file_changed: bool,
-    data: Option<CRDT>,
-}
+
+
 fn crdt_get_changes(commit_hash: u64, file: &str) -> CrdtFileStateObject {
     let mut file_found: bool = false;
     let mut file_changed: bool = false;
@@ -412,11 +284,7 @@ fn crdt_get_changes(commit_hash: u64, file: &str) -> CrdtFileStateObject {
     let head_files = fs::read_dir(".riel/commits/local/.head").expect("Failed to read directory.");
     let head_files_as_strings: Vec<String> = head_files.map(|x| x.unwrap().path().display().to_string()).collect::<Vec<String>>();
     if !head_files_as_strings.contains(&file.to_string()) {
-        return CrdtFileStateObject {
-            file_found: false,
-            file_changed,
-            data,
-        }
+        return CrdtFileStateObject::new(file_found, file_changed, data);
     }else {
         file_found = true;
         let lines_head: String = fs::read_to_string(format!(".riel/commits/local/.head/{}", file)).expect("Failed to read file in .head.");
@@ -515,8 +383,6 @@ fn test_range_all() {
     };
     assert_eq!(r.add(11, 19), true);
     r.add(60, 75);
-    assert_eq!(r.get_min(), 0);
-    assert_eq!(r.get_max(), 75);
     assert_eq!(r.contains(65), true);
     assert_eq!(r.add(51, 59), true);
     r.add(100, 80);
