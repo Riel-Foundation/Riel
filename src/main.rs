@@ -274,8 +274,6 @@ fn copy_directory(src: &std::path::Path, dest: &std::path::Path) -> io::Result<(
 
     Ok(())
 }
-
-
 fn crdt_get_changes(commit_hash: u64, file: &str) -> CrdtFileStateObject {
     let mut file_found: bool = false;
     let mut file_changed: bool = false;
@@ -317,16 +315,6 @@ fn crdt_get_changes(commit_hash: u64, file: &str) -> CrdtFileStateObject {
         file_changed,
         data,
     }
-}
-fn get_different_segments_lines(before: &Vec<&str>, after: &Vec<&str>) -> Vec<(u32, u32)> {
-    let mut segments: Vec<(u32, u32)> = Vec::new();
-    let mut line: u32 = 0;
-    let mut start: u32 = 0;
-    let mut end: u32 = 0;
-    for l in after {
-        todo!(); // FIXME
-    }
-    segments
 }
 // Tests for Range & CRDT 
 #[cfg(test)]
