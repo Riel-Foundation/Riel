@@ -13,9 +13,9 @@ Alpha to-do list:
 - [ ] CRDT algorithm implemented where possible
 
 Manual installation for Linux:
-- Install Rust
-- Clone this repository
-- Create a folder for the generated binary file: ```mkdir myBinaryFolder```
-- Build the binary file: ```cargo build --release --out-dir ./myBinaryFolder -Z unstable-options```
-- Copy the binary file to your PATH: ```cp ./myBinaryFolder/riel /usr/local/bin```
-- Note: Updating the binary file is as simple as running the build command again
+1. Install Rust
+2. Clone this repository
+3. Create a folder for the generated binary file: ```mkdir myBinaryFolder```
+3. Build the binary file: ```cargo build --release --out-dir ./myBinaryFolder -Z unstable-options```
+4. Copy the binary file to your PATH: ```cp ./myBinaryFolder/riel /usr/local/bin```
+Note: Updating the binary file is as simple as doing 3 and 4 again inside the repository's folder
