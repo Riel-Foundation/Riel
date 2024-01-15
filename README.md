@@ -10,3 +10,11 @@ Alpha to-do list:
 - [X] Goto, rollback
 - [ ] Thrust (push), load (pull) from remotes
 - [ ] CRDT algorithm implemented where possible
+
+Manual installation for Linux:
+- Install Rust
+- Clone this repository
+- Create a folder for the generated binary file: ```mkdir myBinaryFolder```
+- Build the binary file: ```cargo build --release --out-dir ./myBinaryFolder -Z unstable-options```
+- Copy the binary file to your PATH: ```cp ./myBinaryFolder/riel /usr/local/bin```
+- Note: Updating the binary file is as simple as running the build command again

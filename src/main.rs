@@ -13,13 +13,14 @@ use args_parser::{parse_args, ParsedArgsObject};
 const RIEL_IGNORE_BUFFER: &[u8] = 
 b"# This is a .rielignore file. It is used to ignore files when adding them to the repository.
 \n# Folders should be written like this: \n.git\ntest\nignorethisfolder\nnode-modules\ntarget";
-const COMMANDS: [&str; 6] = ["help", "mount", "commit", "add", "sudo-destruct", "goto"];
+const COMMANDS: [&str; 7] = ["help", "mount", "commit", "add", "sudo-destruct", "goto", "version"];
 const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
-
+const VERSION: &str = "0.0.3";
+const HELP: &str = "Welcome to Riel!\n Last help message update: 2024-1-11 by Yeray Romero\n Usage: riel ([options]) [command] [arguments/subcommands] \n\nCommands:\nhelp: Shows this message.\nmount: Mounts a Riel repository in the current directory.\ncommit: Commits changes to the repository.\nadd: Adds files to the repository.\nsudo-destruct: For developer purposes, deletes the repository.\ngoto: Goes to a commit, saving local files and not commiting anything yet.\n\nRiel is still in development.\n";
 
 fn main() {
     // filemerger::testing();
-    const HELP: &str = "Welcome to Riel!\n Last help message update: 2024-1-11 by Yeray Romero\n Usage: riel ([options]) [command] [arguments/subcommands] \n\nCommands:\nhelp: Shows this message.\nmount: Mounts a Riel repository in the current directory.\ncommit: Commits changes to the repository.\nadd: Adds files to the repository.\nsudo-destruct: For developer purposes, deletes the repository.\ngoto: Goes to a commit, saving local files and not commiting anything yet.\n\nRiel is still in development.\n";
+    
     let args: Vec<String> = env::args().collect();
     if args.contains(&"--help".to_string()) || args.contains(&"help".to_string()) {
         println!("{}", HELP); //TODO: Change this to exec a help command, handling something like riel help add
@@ -67,6 +68,7 @@ fn exec(command: &str, args: ParsedArgsObject) -> () {
                 _ => println!("Goto only accepts one argument."),
             }
         },
+        "version" => println!("Riel v{}.", VERSION),
         _ => println!("Failed to parse command here.")
     }
 }
