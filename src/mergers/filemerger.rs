@@ -23,6 +23,14 @@ pub fn simple_merge_files(before: &File, after: &File) -> Option<CommitMetadata>
   println!("{:?}", diff_lines);
   todo!()
 }
+pub fn generate_commit_metadata(
+    hash: &str, 
+    msg: String, 
+    files: Vec<String>,
+    dest: String,
+) -> CommitMetadata {
+  todo!()
+}
 #[derive(Clone)]
 pub struct CRDT { 
     pub sorting: u64,
@@ -74,22 +82,14 @@ impl CommitMetadata {
     pub fn new(hash_as_num: u64, message: String, files: Vec<String>) -> CommitMetadata {
         todo!()
         }
+    pub fn compare(&self, other: &CommitMetadata) -> merge_result {
+        todo!()
     }
-pub struct CrdtFileStateObject {
-    pub file_found: bool,
-    pub file_changed: bool,
-    pub data: Option<CRDT>,
 }
-impl CrdtFileStateObject {
-    pub fn new(file_found: bool, file_changed: bool, data: Option<CRDT>) -> CrdtFileStateObject {
-        CrdtFileStateObject {
-            file_found,
-            file_changed,
-            data,
-        }
-    }
-    
+pub struct merge_result {
+   
 }
+
 #[derive(Clone)]
 pub struct Range {
     pub segments: Vec<(u32, u32)>

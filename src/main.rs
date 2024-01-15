@@ -3,12 +3,11 @@ use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
-use std::collections::{HashMap, HashSet};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io;
 mod mergers;
-use mergers::filemerger::{CommitMetadata, CrdtFileStateObject, CRDT, Range};
+use mergers::filemerger::{CommitMetadata, merge_result, CRDT, Range, generate_commit_metadata};
 mod args_parser;
 use args_parser::{parse_args, ParsedArgsObject};
 const RIEL_IGNORE_BUFFER: &[u8] = 
@@ -28,7 +27,7 @@ fn main() {
         return;
     }
     let rielless_args: Vec<String> = args.iter().filter(|x| !x.contains("riel")).map(|x| x.to_string()).collect();
-    let executable_args: Option<ParsedArgsObject> = args_parser::parse_args(rielless_args);
+    let executable_args: Option<ParsedArgsObject> = parse_args(rielless_args);
     if executable_args.is_none() {
         return;
     }else {
@@ -43,7 +42,7 @@ fn exec(command: &str, args: ParsedArgsObject) -> () {
     match command {
         "mount" => mount_repo(), // for now, no subcommands,
         "commit" => {
-            if commit(args.subcommands()) {
+            if commit(args.options(), args.subcommands()) {
                 println!("Commited.");
             } else {
                 println!("Commit failed.");
@@ -102,17 +101,26 @@ fn file_compress(f: File) -> File {
 fn file_decompress(fc: File) -> File  {
     return fc;
 }
-fn commit(commit_args: Vec<String>) -> bool {
+fn commit(options: Vec<String>, commit_args: Vec<String>) -> bool { 
+    let message_option: String = "-m".to_string();
+    let messaged = options.contains(&message_option);
+    let msg: String = if messaged {
+    let index: usize = options.iter().position(|x| x == &message_option).unwrap();
+    options[index + 1].to_string()
+    } else {
+    "No message provided.".to_string()
+    };
+
     
     // TODO: Ensure CRDT systems works as well as possible and keeping redundancy to a minimum
     let time = std::time::SystemTime::now();
     let time_to_number = time.duration_since(std::time::UNIX_EPOCH).expect("Failed to get time for the hash.");
     let number1 = time_to_number.as_secs();
-    let number2 = time_to_number.subsec_nanos() % 23 + 1 / 101;
+    let number2 = time_to_number.subsec_nanos() % 101 + 1 / 23;
     let mut hasher = DefaultHasher::new();
     (number1, number2).hash(&mut hasher);
     let hash: u64 = hasher.finish();
-    save_commit_locally(hash);
+    save_commit_locally(hash, &msg);
     true
 }
 fn add_files(subcommands: Vec<String>, options: Vec<String>) -> bool {
@@ -212,27 +220,25 @@ fn copy_to_area(items: Vec<String>) -> bool {
     }
     true
 }
-fn save_commit_locally(hash: u64) -> bool {
+fn save_commit_locally(hash: u64, msg: &str) -> bool {
     let hash_str = hash.to_string();
     let hash_reduced = hash_str.chars().take(12).collect::<String>();
-    let files_as_strings: Vec<String> = fs::read_dir(".riel/area")
+    println!("Saving commit locally with hash {}.", hash_reduced);
+    area_into_commit(&hash_reduced, msg);
+    
+    true
+}
+fn area_into_commit(hash: &str, msg: &str) {
+    let msg = msg.to_string();
+    let src_str: &str = ".riel/area";
+    let dest_str = format!(".riel/commits/local/{}", hash);
+    let files: Vec<String> = fs::read_dir(".riel/area")
         .expect("Failed to read directory.")
         .map(|x| x.unwrap().path().display().to_string())
         .collect::<Vec<String>>();
-    println!("Saving commit locally with hash {}.", hash_reduced);
-    area_into_commit(&hash_reduced);
-    let data: CommitMetadata = 
-    CommitMetadata::new(hash,
-    "riel does not support messages yet".to_string(), 
-    files_as_strings);
-    true
-}
-
-fn area_into_commit(hash: &str) {
-    let src_str: &str = ".riel/area";
-    let dest_str = format!(".riel/commits/local/{}", hash);
     fs::create_dir(&dest_str).expect("Failed to create directory.");
     copy_recursive(std::path::Path::new(src_str), std::path::Path::new(&dest_str));
+    generate_commit_metadata(hash, msg, files, dest_str);
     fs::remove_dir_all(".riel/area").expect("Failed to remove area.");
     fs::create_dir(".riel/area").expect("Failed to create area.");
 }
@@ -273,6 +279,24 @@ fn copy_directory(src: &std::path::Path, dest: &std::path::Path) -> io::Result<(
     }
 
     Ok(())
+}
+fn read_dir_to_files(dir_result: Result<fs::ReadDir, std::io::Error>) -> Result<Vec<File>, String> {
+    let dir_entries = dir_result.map_err(|e| format!("Error reading directory: {}", e))?;
+
+    let files: Vec<File> = dir_entries
+        .filter_map(|entry| {
+            if let Ok(entry) = entry {
+                if entry.file_type().map_or(false, |ft| ft.is_file()) {
+                    if let Ok(file) = File::open(entry.path()) {
+                        return Some(file);
+                    }
+                }
+            }
+            None
+        })
+        .collect();
+
+    Ok(files)
 }
 // Tests for Range & CRDT 
 #[cfg(test)]
