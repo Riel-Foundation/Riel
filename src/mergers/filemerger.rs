@@ -4,8 +4,10 @@ use std::collections::HashMap;
 use std::io::{BufRead, BufReader};
 use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
+use crate::mergers::commitreader::{metadata_to_object, object_to_metadata};
+pub fn testing() {
 
-// Module: filemerger
+}
 pub fn simple_merge_files(before: &File, after: &File) -> Option<CommitMetadata> {
   let before_lines: Vec<String> = BufReader::new(before)
     .lines()
@@ -74,10 +76,10 @@ impl CRDT {
 }
 }
 pub struct CommitMetadata {
-    hash: String,
-    message: String,
-    crdtdata: HashMap<String, CRDT>,
-    author: String,
+    pub hash: String,
+    pub message: String,
+    pub crdtdata: HashMap<String, CRDT>,
+    pub author: String,
 }
 impl CommitMetadata {
     pub fn new(hash_as_num: u64, message: String, files: Vec<String>) -> CommitMetadata {

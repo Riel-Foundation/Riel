@@ -7,13 +7,16 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io;
 mod mergers;
-use mergers::filemerger::{CommitMetadata, MergeResult, CRDT, Range, generate_commit_metadata};
+use mergers::filemerger::{CommitMetadata, MergeResult, CRDT, Range, generate_commit_metadata, testing};
 mod args_parser;
 use args_parser::{parse_args, ParsedArgsObject};
 const RIEL_IGNORE_BUFFER: &[u8] = 
 b"# This is a .rielignore file. It is used to ignore files when adding them to the repository.
 \n# Folders should be written like this: \n.git\ntest\nignorethisfolder\nnode-modules\ntarget";
-const COMMANDS: [&str; 7] = ["help", "mount", "commit", "add", "sudo-destruct", "goto", "version"];
+const COMMANDS: [&str; 8] = //TODO: Could this be a HashSet?
+["help", "mount", "add",
+ "commit", "sudo-destruct", "goto", 
+ "version", "mergetest"];
 const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
 const VERSION: &str = "0.0.3";
 const HELP: &str = "Welcome to Riel!\n Last help message update: 2024-1-11 by Yeray Romero\n Usage: riel ([options]) [command] [arguments/subcommands] \n\nCommands:\nhelp: Shows this message.\nmount: Mounts a Riel repository in the current directory.\ncommit: Commits changes to the repository.\nadd: Adds files to the repository.\nsudo-destruct: For developer purposes, deletes the repository.\ngoto: Goes to a commit, saving local files and not commiting anything yet.\n\nRiel is still in development.\n";
@@ -69,6 +72,7 @@ fn exec(command: &str, args: ParsedArgsObject) -> () {
             }
         },
         "version" => println!("Riel v{}.", VERSION),
+        "mergetest" => mergers::filemerger::testing(),
         _ => println!("Failed to parse command here.")
     }
 }
