@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 use std::fs::File;
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader};
@@ -82,11 +83,11 @@ impl CommitMetadata {
     pub fn new(hash_as_num: u64, message: String, files: Vec<String>) -> CommitMetadata {
         todo!()
         }
-    pub fn compare(&self, other: &CommitMetadata) -> merge_result {
+    pub fn compare(&self, other: &CommitMetadata) -> MergeResult {
         todo!()
     }
 }
-pub struct merge_result {
+pub struct MergeResult {
    
 }
 
