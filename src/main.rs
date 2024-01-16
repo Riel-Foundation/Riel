@@ -18,7 +18,7 @@ const COMMANDS: [&str; 8] = //TODO: Could this be a HashSet?
  "commit", "sudo-destruct", "goto", 
  "version", "mergetest"];
 const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
-const VERSION: &str = "0.0.3";
+const VERSION: &str = "0.0.35";
 const HELP: &str = "Welcome to Riel!\n Last help message update: 2024-1-11 by Yeray Romero\n Usage: riel ([options]) [command] [arguments/subcommands] \n\nCommands:\nhelp: Shows this message.\nmount: Mounts a Riel repository in the current directory.\ncommit: Commits changes to the repository.\nadd: Adds files to the repository.\nsudo-destruct: For developer purposes, deletes the repository.\ngoto: Goes to a commit, saving local files and not commiting anything yet.\n\nRiel is still in development.\n";
 
 fn main() {
@@ -242,7 +242,7 @@ fn area_into_commit(hash: &str, msg: &str) {
         .collect::<Vec<String>>();
     fs::create_dir(&dest_str).expect("Failed to create directory.");
     copy_recursive(std::path::Path::new(src_str), std::path::Path::new(&dest_str));
-    generate_commit_metadata(hash, msg, files, dest_str);
+    //generate_commit_metadata(hash, msg, files, dest_str);
     fs::remove_dir_all(".riel/area").expect("Failed to remove area.");
     fs::create_dir(".riel/area").expect("Failed to create area.");
 }
