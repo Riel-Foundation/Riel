@@ -11,6 +11,8 @@ pub fn object_to_metadata(object: &CommitMetadata) -> Vec<File> {
   let author: String = object.author.clone();
   let data: HashMap<String, CRDT> = object.crdtdata.clone();
   let concerned_files: Vec<String> = data.keys().map(|x| x.clone()).collect();
-  
+  for file in concerned_files {
+    
+  }
   todo!()
 }

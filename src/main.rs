@@ -91,6 +91,7 @@ fn mount_repo() -> () {
         fs::create_dir(".riel/area").expect(SUBSEQUENT_FAIL_MESSAGE);
         fs::create_dir(".riel/commits/local").expect(SUBSEQUENT_FAIL_MESSAGE);
         fs::create_dir(".riel/commits/updated").expect(SUBSEQUENT_FAIL_MESSAGE);
+        fs::create_dir(".riel/head").expect(SUBSEQUENT_FAIL_MESSAGE);
         // create rielignore
         if !fs::metadata(".rielignore").is_ok() {
             let mut ignore_file = fs::File::create("./.rielignore").expect("Failed to create .rielignore file.");
@@ -125,6 +126,8 @@ fn commit(options: Vec<String>, commit_args: Vec<String>) -> bool {
     (number1, number2).hash(&mut hasher);
     let hash: u64 = hasher.finish();
     save_commit_locally(hash, &msg);
+    // TODO:
+        // Merge commit into head
     true
 }
 fn add_files(subcommands: Vec<String>, options: Vec<String>) -> bool {
