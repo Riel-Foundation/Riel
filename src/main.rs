@@ -15,8 +15,8 @@ b"# This is a .rielignore file. It is used to ignore files when adding them to t
 \n# Folders should be written like this: \n.git\ntest\nignorethisfolder\nnode-modules\ntarget";
 const COMMANDS: [&str; 8] = //TODO: Could this be a HashSet?
 ["help", "mount", "add",
- "commit", "sudo-destruct", "goto", 
- "version", "mergetest"];
+"commit", "sudo-destruct", "goto", 
+"version", "mergetest"];
 const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
 const VERSION: &str = "0.0.35";
 const HELP: &str = "Welcome to Riel!\n Last help message update: 2024-1-11 by Yeray Romero\n Usage: riel ([options]) [command] [arguments/subcommands] \n\nCommands:\nhelp: Shows this message.\nmount: Mounts a Riel repository in the current directory.\ncommit: Commits changes to the repository.\nadd: Adds files to the repository.\nsudo-destruct: For developer purposes, deletes the repository.\ngoto: Goes to a commit, saving local files and not commiting anything yet.\n\nRiel is still in development.\n";
@@ -37,6 +37,9 @@ fn main() {
         let executable_args: ParsedArgsObject = executable_args.unwrap();
         let command: String = executable_args.command();
         let subcomands_and_options: ParsedArgsObject = executable_args.clone();
+        /*println!("Command: {}", command);
+        println!("Subcommands: {:?}", subcomands_and_options.subcommands());
+        println!("Options: {:?}", subcomands_and_options.options());*/
         exec(&command, subcomands_and_options)
     }
 }
@@ -108,10 +111,10 @@ fn file_decompress(fc: File) -> File  {
 }
 fn commit(options: Vec<String>, commit_args: Vec<String>) -> bool { 
     let message_option: String = "-m".to_string();
-    let messaged = options.contains(&message_option);
+    let messaged: bool = options.contains(&message_option);
     let msg: String = if messaged {
     let index: usize = options.iter().position(|x| x == &message_option).unwrap();
-    options[index + 1].to_string()
+    commit_args[index].to_string()
     } else {
     "No message provided.".to_string()
     };
