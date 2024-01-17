@@ -7,7 +7,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io;
 mod mergers;
-use mergers::filemerger::{CommitMetadata, MergeResult, CRDT, Range, generate_commit_metadata, testing};
+use mergers::filemerger::{CommitMetadata, CommitModification, Range, generate_commit_metadata, testing};
 mod args_parser;
 use args_parser::{parse_args, ParsedArgsObject};
 const RIEL_IGNORE_BUFFER: &[u8] = 
@@ -319,8 +319,8 @@ fn read_dir_to_files(dir_result: Result<fs::ReadDir, std::io::Error>) -> Result<
 
     Ok(files)
 }
-// Tests for Range & CRDT 
-#[cfg(test)]
+// Tests for Range & CRDT
+ #[cfg(test)]
 mod test {
     use super::*;
     #[test]
@@ -387,62 +387,7 @@ fn test_range_same_values() {
     r.add(10, 20);
 }
 // Testing CRDT
-#[test]
-fn test_crdt1() {
-    let crdt1: CRDT = CRDT {
-        sorting: 77,
-        changes: vec!["Hello".to_string(), "World".to_string()],
-        line_range: Range {
-            segments: vec![(0, 1), (2, 3)]
-        }
-    };
-    let crdt2: CRDT = CRDT {
-        sorting: 88,
-        changes: vec!["Hello".to_string(), "World".to_string()],
-        line_range: Range {
-            segments: vec![(0, 1), (2, 3)]
-        }
-    };
-    assert_eq!(crdt1.compare(&crdt2).sorting, 88);
-}
-#[test]
-fn test_crdt_reliability() {
-    let crdt1: CRDT = CRDT {
-        sorting: 99,
-        changes: vec!["Hello".to_string()],
-        line_range: Range {
-            segments: vec![(0, 1), (2, 3)]
-        }
-    };
-    let crdt2: CRDT = CRDT {
-        sorting: 99,
-        changes: vec!["One".to_string()],
-        line_range: Range {
-            segments: vec![(0, 1), (2, 3)]
-        }
-    };
-    assert_eq!(crdt1.compare(&crdt2).changes[0], crdt2.compare(&crdt1).changes[0]);
-}
-#[test]
-fn test_crdt_reliability2() {
-    let crdt1: CRDT = CRDT {
-        sorting: 199,
-        changes: vec!["h".to_string()],
-        line_range: Range {
-            segments: vec![(0, 1), (2, 3)]
-        }
-    };
-    let crdt2: CRDT = CRDT {
-        sorting: 199,
-        changes: vec!["1".to_string()],
-        line_range: Range {
-            segments: vec![(0, 1), (2, 3)]
-        }
-    };
-    assert_eq!(crdt1.compare(&crdt2).changes[0], crdt2.compare(&crdt1).changes[0]);
 } 
-}
-
 // If last two test work, it's a matter of fact that if all commits have enough metadata,
   // Conflicts shouldn't be too hard to avoid
   // That does not mean code will not get broken, but it's easier for a developer
