@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Clone)]
 pub struct DateTime {
     year: i32,
     month: u32,
@@ -22,33 +23,16 @@ impl DateTime {
             milliseconds,
         }
     }
+}
 
-    pub fn compare(&self, other: &DateTime) -> Ordering {
-        if self.year != other.year {
-            self.year.cmp(&other.year)
-        } else if self.month != other.month {
-            self.month.cmp(&other.month)
-        } else if self.day != other.day {
-            self.day.cmp(&other.day)
-        } else if self.hours != other.hours {
-            self.hours.cmp(&other.hours)
-        } else if self.minutes != other.minutes {
-            self.minutes.cmp(&other.minutes)
-        } else if self.seconds != other.seconds {
-            self.seconds.cmp(&other.seconds)
-        } else {
-            self.milliseconds.cmp(&other.milliseconds)
-        }
-    }
-    fn clone(&self) -> DateTime {
-        DateTime {
-            year: self.year,
-            month: self.month,
-            day: self.day,
-            hours: self.hours,
-            minutes: self.minutes,
-            seconds: self.seconds,
-            milliseconds: self.milliseconds,
-        }
+impl Ord for DateTime {
+    fn cmp(&self, other: &DateTime) -> Ordering {
+        self.year.cmp(&other.year)
+            .then_with(|| self.month.cmp(&other.month))
+            .then_with(|| self.day.cmp(&other.day))
+            .then_with(|| self.hours.cmp(&other.hours))
+            .then_with(|| self.minutes.cmp(&other.minutes))
+            .then_with(|| self.seconds.cmp(&other.seconds))
+            .then_with(|| self.milliseconds.cmp(&other.milliseconds))
     }
 }
