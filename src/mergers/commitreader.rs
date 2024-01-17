@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::collections::HashMap;
-use crate::mergers::filemerger::{CommitMetadata, CommitModification};
+use crate::mergers::commit_abstractions::{CommitMetadata, CommitModification};
 pub fn metadata_to_abstraction(metadata: &File) -> CommitMetadata {
   todo!()
 }

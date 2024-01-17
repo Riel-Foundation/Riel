@@ -7,7 +7,8 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io;
 mod mergers;
-use mergers::filemerger::{CommitMetadata, CommitModification, Range, generate_commit_metadata, testing};
+mod utils;
+use mergers::filemerger::{Range, generate_commit_metadata, testing};
 mod args_parser;
 use args_parser::{parse_args, ParsedArgsObject};
 const RIEL_IGNORE_BUFFER: &[u8] = 

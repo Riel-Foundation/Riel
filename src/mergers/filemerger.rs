@@ -5,7 +5,7 @@ use std::io::{BufRead, BufReader};
 use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
 use crate::mergers::commitreader::{metadata_to_abstraction, abstraction_to_metadata};
-use std::cmp::Ordering;
+use crate::mergers::commit_abstractions::{CommitMetadata, CommitModification};
 pub fn testing() {
 
 }
@@ -35,49 +35,8 @@ pub fn generate_commit_metadata(
 ) -> CommitMetadata {
   todo!()
 }
-#[derive(Clone)]
-pub struct CommitModification { 
-    pub date: DateTime,
-    pub changes: Vec<String>,
-}
-impl CommitModification {
-    pub fn compare(&self, other: &CommitModification) -> CommitModification {
-        let clone1: CommitModification = self.clone();
-        let clone2: CommitModification = other.clone();
-        let difference: bool = self.date > other.date;
-        
-        if !difference {
-            // they are equal
-            let hash1: u64 = hash_string(&self.changes.join(""));
-            let hash2: u64 = hash_string(&other.changes.join(""));
-            fn hash_string(string: &str) -> u64 {
-                let mut hasher = DefaultHasher::new();
-                string.hash(&mut hasher);
-                hasher.finish()
-            }
-            if hash1 > hash2 {
-                return clone1;
-            } else {
-                return clone2;
-            }
-        } else {
-            // they are not equal
-            if difference {
-                // self is greater
-                return clone1;
-            } else {
-                // other is greater
-                return clone2;
-            }
-            }
-        }
-}
-pub struct CommitMetadata {
-    pub hash: String,
-    pub message: String,
-    pub author: String,
-    pub modifications: Vec<CommitModification>
-}
+
+
 #[derive(Clone)]
 pub struct Range {
     pub segments: Vec<(u32, u32)>
@@ -121,58 +80,5 @@ impl Range {
             }
         }
         max
-    }
-}
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct DateTime {
-    year: i32,
-    month: u32,
-    day: u32,
-    hours: u32,
-    minutes: u32,
-    seconds: u32,
-    milliseconds: u32,
-}
-
-impl DateTime {
-    fn new(year: i32, month: u32, day: u32, hours: u32, minutes: u32, seconds: u32, milliseconds: u32) -> DateTime {
-        DateTime {
-            year,
-            month,
-            day,
-            hours,
-            minutes,
-            seconds,
-            milliseconds,
-        }
-    }
-
-    fn compare(&self, other: &DateTime) -> Ordering {
-        if self.year != other.year {
-            self.year.cmp(&other.year)
-        } else if self.month != other.month {
-            self.month.cmp(&other.month)
-        } else if self.day != other.day {
-            self.day.cmp(&other.day)
-        } else if self.hours != other.hours {
-            self.hours.cmp(&other.hours)
-        } else if self.minutes != other.minutes {
-            self.minutes.cmp(&other.minutes)
-        } else if self.seconds != other.seconds {
-            self.seconds.cmp(&other.seconds)
-        } else {
-            self.milliseconds.cmp(&other.milliseconds)
-        }
-    }
-    fn clone(&self) -> DateTime {
-        DateTime {
-            year: self.year,
-            month: self.month,
-            day: self.day,
-            hours: self.hours,
-            minutes: self.minutes,
-            seconds: self.seconds,
-            milliseconds: self.milliseconds,
-        }
     }
 }
