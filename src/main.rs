@@ -109,30 +109,6 @@ fn file_compress(f: File) -> File {
 fn file_decompress(fc: File) -> File  {
     return fc;
 }
-fn commit(options: Vec<String>, commit_args: Vec<String>) -> bool { 
-    let message_option: String = "-m".to_string();
-    let messaged: bool = options.contains(&message_option);
-    let msg: String = if messaged {
-    let index: usize = options.iter().position(|x| x == &message_option).unwrap();
-    commit_args[index].to_string()
-    } else {
-    "No message provided.".to_string()
-    };
-
-    
-    // TODO: Ensure CRDT systems works as well as possible and keeping redundancy to a minimum
-    let time = std::time::SystemTime::now();
-    let time_to_number = time.duration_since(std::time::UNIX_EPOCH).expect("Failed to get time for the hash.");
-    let number1 = time_to_number.as_secs();
-    let number2 = time_to_number.subsec_nanos() % 101 + 1 / 23;
-    let mut hasher = DefaultHasher::new();
-    (number1, number2).hash(&mut hasher);
-    let hash: u64 = hasher.finish();
-    save_commit_locally(hash, &msg);
-    // TODO:
-        // Merge commit into head
-    true
-}
 fn add_files(subcommands: Vec<String>, options: Vec<String>) -> bool {
     //FIXME: Add a check to see if the files are already in the area
     if !check_repo() {
@@ -230,15 +206,31 @@ fn copy_to_area(items: Vec<String>) -> bool {
     }
     true
 }
+fn commit(options: Vec<String>, commit_args: Vec<String>) -> bool { 
+    let message_option: String = "-m".to_string();
+    let messaged: bool = options.contains(&message_option);
+    let msg: String = if messaged {
+    let index: usize = options.iter().position(|x| x == &message_option).unwrap();
+    commit_args[index].to_string()
+    } else {
+    "No message provided.".to_string()
+    };
+
+    
+    // TODO: Ensure CRDT systems works as well as possible and keeping redundancy to a minimum
+    let time = std::time::SystemTime::now();
+    let time_to_number = time.duration_since(std::time::UNIX_EPOCH).expect("Failed to get time for the hash.");
+    let number1 = time_to_number.as_secs();
+    let number2 = time_to_number.subsec_nanos() % 101 + 1 / 23;
+    let mut hasher = DefaultHasher::new();
+    (number1, number2).hash(&mut hasher);
+    let hash: u64 = hasher.finish();
+    save_commit_locally(hash, &msg)
+}
 fn save_commit_locally(hash: u64, msg: &str) -> bool {
     let hash_str = hash.to_string();
     let hash_reduced = hash_str.chars().take(12).collect::<String>();
     println!("Saving commit locally with hash {}.", hash_reduced);
-    area_into_commit(&hash_reduced, msg);
-    
-    true
-}
-fn area_into_commit(hash: &str, msg: &str) {
     let msg = msg.to_string();
     let src_str: &str = ".riel/area";
     let dest_str = format!(".riel/commits/local/{}", hash);
@@ -248,9 +240,28 @@ fn area_into_commit(hash: &str, msg: &str) {
         .collect::<Vec<String>>();
     fs::create_dir(&dest_str).expect("Failed to create directory.");
     copy_recursive(std::path::Path::new(src_str), std::path::Path::new(&dest_str));
-    //generate_commit_metadata(hash, msg, files, dest_str);
     fs::remove_dir_all(".riel/area").expect("Failed to remove area.");
     fs::create_dir(".riel/area").expect("Failed to create area.");
+    //Check if head is empty
+    let is_first_commit: bool = check_head();
+    if is_first_commit {
+        // copy also to head
+        copy_recursive(std::path::Path::new(&dest_str), std::path::Path::new(".riel/head"));
+    }else {
+        // else, we have to go through crdt and merge
+        let head_dir = fs::read_dir(".riel/head");
+        let head_files = read_dir_to_files(head_dir).expect("Failed to read directory.");
+        //TODO
+    }
+    true
+}
+fn check_head() -> bool {
+    let head_dir = fs::read_dir(".riel/head").expect("Failed to read directory.");
+    let head_files: Vec<fs::DirEntry> = head_dir
+        .map(|x| x.unwrap())
+        .collect::<Vec<fs::DirEntry>>();
+    head_files.len() == 0
+
 }
 fn prepare_goto(hash: String) -> bool {
     let hash_reduced = hash;
