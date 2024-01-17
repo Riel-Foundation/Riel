@@ -35,8 +35,6 @@ pub fn generate_commit_metadata(
 ) -> CommitMetadata {
   todo!()
 }
-
-
 #[derive(Clone)]
 pub struct Range {
     pub segments: Vec<(u32, u32)>
