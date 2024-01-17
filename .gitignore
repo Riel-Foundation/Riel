@@ -19,3 +19,5 @@ Cargo.lock
 # This is some meta-things
 .riel/
 test/
+# Vscode
+.vscode/
