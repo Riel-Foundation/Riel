@@ -8,7 +8,6 @@ use std::hash::{Hash, Hasher};
 use std::io;
 mod mergers;
 mod utils;
-use mergers::filemerger::{Range, generate_commit_metadata, testing};
 mod args_parser;
 use args_parser::{parse_args, ParsedArgsObject};
 const RIEL_IGNORE_BUFFER: &[u8] = 
@@ -76,7 +75,6 @@ fn exec(command: &str, args: ParsedArgsObject) -> () {
             }
         },
         "version" => println!("Riel v{}.", VERSION),
-        "mergetest" => mergers::filemerger::testing(),
         _ => println!("Failed to parse command here.")
     }
 }
@@ -157,7 +155,6 @@ fn add_files(subcommands: Vec<String>, options: Vec<String>) -> bool {
                 }
             }
         },
-        _ => println!("Failed to parse command."),
     }
     false
 }
@@ -320,79 +317,3 @@ fn read_dir_to_files(dir_result: Result<fs::ReadDir, std::io::Error>) -> Result<
 
     Ok(files)
 }
-// Tests for Range & CRDT
- #[cfg(test)]
-mod test {
-    use super::*;
-    #[test]
-    fn test_range_contains() {
-    let r: Range = Range {
-        segments: vec![(0, 10), (20, 30), (40, 50)]
-    };
-    assert_eq!(r.contains(0), false);
-    assert_eq!(r.contains(10), false);
-    assert_eq!(r.contains(20), false);
-    assert_eq!(r.contains(30), false);
-    assert_eq!(r.contains(40), false);
-    assert_eq!(r.contains(50), false);
-    assert_eq!(r.contains(11), false);
-    assert_eq!(r.contains(19), false);
-    assert_eq!(r.contains(31), false);
-    assert_eq!(r.contains(39), false);
-    assert_eq!(r.contains(51), false);
-    assert_eq!(r.contains(100), false);
-    assert_eq!(r.contains(8), true);
-}
-#[test]
-#[should_panic(expected = "Tried to add a range with overlapping values. (Fast check)")]
-fn test_range_fail() {
-    let mut r: Range = Range {
-        segments: vec![(0, 10), (20, 30), (40, 50)]
-    };
-    r.add(8, 12);
-}
-#[test]
-#[should_panic(expected = "Tried to add a range with overlapping values. (Fast check)")]
-fn test_range_fail2() {
-    let mut r: Range = Range {
-        segments: vec![(0, 10), (20, 30), (40, 50)]
-    };
-    r.add(11, 21);
-}
-#[test]
-#[should_panic(expected = "Tried to add a range with overlapping values. (Slow check)")]
-fn test_range_fail3() {
-    let mut r: Range = Range {
-        segments: vec![(0, 10), (20, 30), (40, 50)]
-    };
-    r.add(11, 55);
-}
-#[test]
-#[should_panic(expected = "Range's start was bigger than range's end.")]
-fn test_range_all() {
-    let mut r: Range = Range {
-        segments: vec![(0, 10), (20, 30), (40, 50)]
-    };
-    assert_eq!(r.add(11, 19), true);
-    r.add(60, 75);
-    assert_eq!(r.contains(65), true);
-    assert_eq!(r.add(51, 59), true);
-    r.add(100, 80);
-}
-#[test]
-#[should_panic(expected = "Ranges are not allowed to have the same start or end.")]
-fn test_range_same_values() {
-    let mut r: Range = Range {
-        segments: vec![(0, 10), (20, 30), (40, 50)]
-    };
-    r.add(10, 20);
-}
-// Testing CRDT
-} 
-// If last two test work, it's a matter of fact that if all commits have enough metadata,
-  // Conflicts shouldn't be too hard to avoid
-  // That does not mean code will not get broken, but it's easier for a developer
-  // to focus on fix broken code that to fix a broken Version Control System feature.
-  // Of course, it will be always better to not have two people working on the same file
-  // Just in case I will make a local copy of the file the user has local changes on
-  // TODO: This is the EOF but I don't like having comments in code, this should be removed.
