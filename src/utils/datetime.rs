@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, time::SystemTime};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Clone)]
 pub struct DateTime {
@@ -21,6 +21,34 @@ impl DateTime {
             minutes,
             seconds,
             milliseconds,
+        }
+    }
+    pub fn now() -> DateTime {
+        let base = std::time::SystemTime::now();
+        DateTime::from(base)
+    }
+    fn from(time: SystemTime) -> DateTime {
+       if let Ok(duration) = time.duration_since(SystemTime::UNIX_EPOCH) {
+            let seconds: u64 = duration.as_secs();
+            let milliseconds: u32 = duration.subsec_millis();
+
+            let (years, remaining_seconds) = (seconds / 31536000, seconds % 31536000);
+            let (months, remaining_seconds) = (remaining_seconds / 2592000, remaining_seconds % 2592000);
+            let (days, remaining_seconds) = (remaining_seconds / 86400, remaining_seconds % 86400);
+            let (hours, remaining_seconds) = (remaining_seconds / 3600, remaining_seconds % 3600);
+            let (minutes, remaining_seconds) = (remaining_seconds / 60, remaining_seconds % 60);
+
+            DateTime::new(
+                1970 + years as i32,
+                months as u32 + 1,
+                days as u32 + 1,
+                hours as u32,
+                minutes as u32,
+                remaining_seconds as u32,
+                milliseconds,
+            )
+        } else {
+            panic!("SystemTime is earlier than UNIX epoch!");
         }
     }
 }
