@@ -2,10 +2,12 @@
 use std::env;
 use std::fs;
 use std::fs::File;
+use std::io::Read;
 use std::io::Write;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io;
+use std::net::TcpStream;
 mod mergers;
 mod utils;
 mod args_parser;
@@ -13,10 +15,10 @@ use args_parser::{parse_args, ParsedArgsObject};
 const RIEL_IGNORE_BUFFER: &[u8] = 
 b"# This is a .rielignore file. It is used to ignore files when adding them to the repository.
 \n# Folders should be written like this: \n.git\ntest\nignorethisfolder\nnode-modules\ntarget";
-const COMMANDS: [&str; 8] = //TODO: Could this be a HashSet?
+const COMMANDS: [&str; 9] = //TODO: Could this be a HashSet?
 ["help", "mount", "add",
 "commit", "sudo-destruct", "goto", 
-"version", "mergetest"];
+"version", "mergetest", "clone"];
 const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
 const VERSION: &str = "0.0.35";
 const HELP: &str = "Welcome to Riel!\n Last help message update: 2024-1-11 by Yeray Romero\n Usage: riel ([options]) [command] [arguments/subcommands] \n\nCommands:\nhelp: Shows this message.\nmount: Mounts a Riel repository in the current directory.\ncommit: Commits changes to the repository.\nadd: Adds files to the repository.\nsudo-destruct: For developer purposes, deletes the repository.\ngoto: Goes to a commit, saving local files and not commiting anything yet.\n\nRiel is still in development.\n";
@@ -75,8 +77,42 @@ fn exec(command: &str, args: ParsedArgsObject) -> () {
             }
         },
         "version" => println!("Riel v{}.", VERSION),
+        "clone" => clone(args.subcommands(), args.options()),
         _ => println!("Failed to parse command here.")
     }
+}
+fn clone(subcommands: Vec<String>, options: Vec<String>) -> () {
+    if options.len() > 0 {
+        println!("Clone does not accept options.");
+        return;
+    }
+    println!("subcommands: {:?}", subcommands);
+    if subcommands.len() < 1 {
+        println!("Clone only accepts exactly one argument: the URL.");
+        return;
+    }
+    let repo_url: &str = "localhost:9009";
+
+    // Connect to the server
+    let mut stream: TcpStream = TcpStream::connect(repo_url).expect("Failed to connect to repository.");
+
+    // Build the HTTP request for a GET method using format string
+    let request = format!(
+        "GET / HTTP/1.1\r\n\
+         Host: {}\r\n\
+         Connection: close\r\n\r\n",
+        repo_url
+    );
+
+    // Send the request
+    stream.write_all(request.as_bytes()).expect("Failed to write to stream.");
+
+    // Read the response
+    let mut buffer: String = String::new();
+    stream.read_to_string(&mut buffer).expect("Failed to read from stream.");
+
+    // Print the response
+    println!("Response: {}", buffer);
 }
 fn mount_repo() -> () {
     if check_repo() {
