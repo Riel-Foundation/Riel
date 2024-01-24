@@ -1,4 +1,5 @@
 #![allow(unused_variables, dead_code, unused_imports, unused_mut, unused_assignments)]
+//std
 use std::env;
 use std::fs;
 use std::fs::File;
@@ -8,10 +9,15 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io;
 use std::net::TcpStream;
+//mods
 mod mergers;
 mod utils;
 mod args_parser;
+mod remotes;
+//internal
 use args_parser::{parse_args, ParsedArgsObject};
+use remotes::tcp_web::web_get_with_url;
+// consts
 const RIEL_IGNORE_BUFFER: &[u8] = 
 b"# This is a .rielignore file. It is used to ignore files when adding them to the repository.
 \n# Folders should be written like this: \n.git\ntest\nignorethisfolder\nnode-modules\ntarget";
@@ -94,18 +100,6 @@ fn clone(subcommands: Vec<String>, options: Vec<String>) -> () {
     web_get_with_url(format!("{}:{}", subcommands[0], "9009").as_str());
 }
 
-fn web_get_with_url(repo_url: &str) -> TcpStream {
-    let mut stream: TcpStream = TcpStream::connect(repo_url).expect("Failed to connect to repository.");
-    let request: String = format!(
-        "GET / HTTP/1.1\r\n\
-         Host: {}\r\n\
-         Connection: close\r\n\r\n",
-        repo_url
-    );
-    stream.write_all(request.as_bytes()).expect("Failed to write to stream.");
-    let mut buffer: String = String::new();
-    stream
-}
 fn mount_repo() -> () {
     if check_repo() {
         println!("Riel repository already exists in this directory.");
