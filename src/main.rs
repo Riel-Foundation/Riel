@@ -99,7 +99,7 @@ fn clone(subcommands: Vec<String>, options: Vec<String>) -> () {
     }
     let mut stream: TcpStream = 
         web_get_with_url(
-            format!("{}:{}", subcommands[0], "9009").as_str());
+            format!("{}", subcommands[0]).as_str());
     if create_clone_files(&mut stream) {
         println!("Clone successful.");
     } else {
