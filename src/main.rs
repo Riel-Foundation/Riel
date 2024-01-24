@@ -91,28 +91,20 @@ fn clone(subcommands: Vec<String>, options: Vec<String>) -> () {
         println!("Clone only accepts exactly one argument: the URL.");
         return;
     }
-    let repo_url: &str = "localhost:9009";
+    web_get_with_url(format!("{}:{}", subcommands[0], "9009").as_str());
+}
 
-    // Connect to the server
+fn web_get_with_url(repo_url: &str) -> TcpStream {
     let mut stream: TcpStream = TcpStream::connect(repo_url).expect("Failed to connect to repository.");
-
-    // Build the HTTP request for a GET method using format string
-    let request = format!(
+    let request: String = format!(
         "GET / HTTP/1.1\r\n\
          Host: {}\r\n\
          Connection: close\r\n\r\n",
         repo_url
     );
-
-    // Send the request
     stream.write_all(request.as_bytes()).expect("Failed to write to stream.");
-
-    // Read the response
     let mut buffer: String = String::new();
-    stream.read_to_string(&mut buffer).expect("Failed to read from stream.");
-
-    // Print the response
-    println!("Response: {}", buffer);
+    stream
 }
 fn mount_repo() -> () {
     if check_repo() {
