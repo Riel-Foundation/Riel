@@ -97,7 +97,17 @@ fn clone(subcommands: Vec<String>, options: Vec<String>) -> () {
         println!("Clone only accepts exactly one argument: the URL.");
         return;
     }
-    web_get_with_url(format!("{}:{}", subcommands[0], "9009").as_str());
+    let mut stream: TcpStream = 
+        web_get_with_url(
+            format!("{}:{}", subcommands[0], "9009").as_str());
+    if create_clone_files(&mut stream) {
+        println!("Clone successful.");
+    } else {
+        println!("Clone failed.");
+    }
+}
+fn create_clone_files(clone_response: &mut TcpStream) -> bool {
+    remotes::tcp_web::receive_directory_structure(clone_response, ".")
 }
 
 fn mount_repo() -> () {
