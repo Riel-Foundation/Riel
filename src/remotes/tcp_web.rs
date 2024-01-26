@@ -38,8 +38,6 @@ pub fn receive_directory_structure(stream: &mut TcpStream, base_path: &str) -> b
   // Read the HTTP response headers
   if let Ok(http_response) = read_http_response(stream) {
     println!("HTTP Response:\n{}", http_response);
-    // END: abpxx6d04wxr
-    // BEGIN: be15d9bcejpp
     // Check if the response starts with "HTTP/1.1 200 OK"
     if http_response.starts_with("HTTP/1.1 200 OK") {
       println!("Receiving directory structure...");
@@ -99,7 +97,6 @@ pub fn receive_directory_structure(stream: &mut TcpStream, base_path: &str) -> b
       println!("Directory structure successfully received and recreated.");
       return true;
     }
-    // END: be15d9bcejpp
   }
 
   false
