@@ -23,12 +23,12 @@ use remotes::tcp_web::web_get_with_url;
 const RIEL_IGNORE_BUFFER: &[u8] = 
 b"# This is a .rielignore file. It is used to ignore files when adding them to the repository.
 \n# Folders should be written like this: \n.git\ntest\nignorethisfolder\nnode-modules\ntarget";
-const COMMANDS: [&str; 9] = //TODO: Could this be a HashSet?
+const COMMANDS: [&str; 8] = //TODO: Could this be a HashSet?
 ["help", "mount", "add",
 "commit", "sudo-destruct", "goto", 
-"version", "mergetest", "clone"];
+"version", "clone"];
 const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
-const VERSION: &str = "0.0.5";
+const VERSION: &str = "0.1.0";
 const HELP: &str = "Welcome to Riel!\n Last help message update: 2024-1-11 by Yeray Romero\n Usage: riel ([options]) [command] [arguments/subcommands] \n\nCommands:\nhelp: Shows this message.\nmount: Mounts a Riel repository in the current directory.\ncommit: Commits changes to the repository.\nadd: Adds files to the repository.\nsudo-destruct: For developer purposes, deletes the repository.\ngoto: Goes to a commit, saving local files and not commiting anything yet.\n\nRiel is still in development.\n";
 
 fn main() {   
@@ -52,6 +52,19 @@ fn main() {
     }
 }
 fn exec(command: &str, args: ParsedArgsObject) -> () {
+    // always-working commands: help, version, clone
+    if command == "help" {
+        println!("{}", HELP);
+        return;
+    }
+    if command == "clone" {
+        clone(args.subcommands(), args.options());
+        return;
+    }
+    if command == "version" {
+        println!("Riel v{}.", VERSION);
+        return;
+    }
     match check_repo() {
         true => {
             if command == "mount" {
@@ -63,11 +76,7 @@ fn exec(command: &str, args: ParsedArgsObject) -> () {
         },
         false => {
             match command {
-                "mount" => mount_repo(), // for now, no subcommands
-                "clone" => {
-                    clone(args.subcommands(), args.options());
-                    return;
-                },
+                "mount" => mount_repo(), // for now, no subcommands,
                 _ => {
                     println!("Riel repository does not exist in this directory.");
                     return;
@@ -103,7 +112,6 @@ fn exec(command: &str, args: ParsedArgsObject) -> () {
                 _ => println!("Goto only accepts one argument."),
             }
         },
-        "version" => println!("Riel v{}.", VERSION),
         _ => println!("Failed to parse command here.")
     }
 }
@@ -117,13 +125,17 @@ fn clone(subcommands: Vec<String>, options: Vec<String>) -> () {
         println!("Clone only accepts exactly one argument: the URL.");
         return;
     }
-    let mut stream: TcpStream = 
+    let stream_option: Option<TcpStream> = 
         web_get_with_url(
             format!("{}", subcommands[0]).as_str());
-    if create_clone_files(&mut stream) {
-        println!("Clone successful.");
+    if let Some(mut stream) = stream_option {
+        if create_clone_files(&mut stream) {
+            println!("Clone successful.");
+        } else {
+            println!("Clone failed.");
+        }
     } else {
-        println!("Clone failed.");
+        println!("Something went wrong while cloning. Please check your URL.");
     }
 }
 fn create_clone_files(clone_response: &mut TcpStream) -> bool {
