@@ -9,11 +9,13 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io;
 use std::net::TcpStream;
+use adding::add::add_files;
 //mods
 mod mergers;
 mod utils;
 mod args_parser;
 mod remotes;
+mod adding;
 //internal
 use args_parser::{parse_args, ParsedArgsObject};
 use remotes::tcp_web::web_get_with_url;
@@ -26,12 +28,10 @@ const COMMANDS: [&str; 9] = //TODO: Could this be a HashSet?
 "commit", "sudo-destruct", "goto", 
 "version", "mergetest", "clone"];
 const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
-const VERSION: &str = "0.0.35";
+const VERSION: &str = "0.0.5";
 const HELP: &str = "Welcome to Riel!\n Last help message update: 2024-1-11 by Yeray Romero\n Usage: riel ([options]) [command] [arguments/subcommands] \n\nCommands:\nhelp: Shows this message.\nmount: Mounts a Riel repository in the current directory.\ncommit: Commits changes to the repository.\nadd: Adds files to the repository.\nsudo-destruct: For developer purposes, deletes the repository.\ngoto: Goes to a commit, saving local files and not commiting anything yet.\n\nRiel is still in development.\n";
 
-fn main() {
-    // filemerger::testing();
-    
+fn main() {   
     let args: Vec<String> = env::args().collect();
     if args.contains(&"--help".to_string()) || args.contains(&"help".to_string()) {
         println!("{}", HELP); //TODO: Change this to exec a help command, handling something like riel help add
@@ -51,10 +51,31 @@ fn main() {
         exec(&command, subcomands_and_options)
     }
 }
-
 fn exec(command: &str, args: ParsedArgsObject) -> () {
+    match check_repo() {
+        true => {
+            if command == "mount" {
+                println!("Riel repository already exists in this directory.");
+                return;
+            }
+            // clone IS allowed because it will create a new repo inside the current one
+            // TODO: Subrepo support
+        },
+        false => {
+            match command {
+                "mount" => mount_repo(), // for now, no subcommands
+                "clone" => {
+                    clone(args.subcommands(), args.options());
+                    return;
+                },
+                _ => {
+                    println!("Riel repository does not exist in this directory.");
+                    return;
+                }
+            }
+        }
+    }
     match command {
-        "mount" => mount_repo(), // for now, no subcommands,
         "commit" => {
             if commit(args.options(), args.subcommands()) {
                 println!("Commited.");
@@ -83,7 +104,6 @@ fn exec(command: &str, args: ParsedArgsObject) -> () {
             }
         },
         "version" => println!("Riel v{}.", VERSION),
-        "clone" => clone(args.subcommands(), args.options()),
         _ => println!("Failed to parse command here.")
     }
 }
@@ -92,8 +112,8 @@ fn clone(subcommands: Vec<String>, options: Vec<String>) -> () {
         println!("Clone does not accept options.");
         return;
     }
-    println!("subcommands: {:?}", subcommands);
-    if subcommands.len() < 1 {
+    println!("Argument passed: {:?}", subcommands);
+    if subcommands.len() < 1 || subcommands.len() > 1{
         println!("Clone only accepts exactly one argument: the URL.");
         return;
     }
@@ -109,7 +129,6 @@ fn clone(subcommands: Vec<String>, options: Vec<String>) -> () {
 fn create_clone_files(clone_response: &mut TcpStream) -> bool {
     remotes::tcp_web::receive_directory_structure(clone_response, ".")
 }
-
 fn mount_repo() -> () {
     if check_repo() {
         println!("Riel repository already exists in this directory.");
@@ -140,101 +159,10 @@ fn file_compress(f: File) -> File {
 fn file_decompress(fc: File) -> File  {
     return fc;
 }
-fn add_files(subcommands: Vec<String>, options: Vec<String>) -> bool {
-    //FIXME: Add a check to see if the files are already in the area
-    if !check_repo() {
-        println!("No valid Riel repository found. Try init or mount.");
-        return false;
-    }
-    let should_add_all: bool = options.contains(&("-all".to_string())) || options.contains(&("-A".to_string()));
-    match subcommands.len() + options.len() {
-        0 => println!("No files specified."),
-        1.. => {
-            if should_add_all {
-                let ignored: Ignores = get_ignored();
-                if ignored.exists {
-                    // should add all files except ignored and .riel
-                    let ignore_list: Vec<String> = ignored.files.iter().map(|x| x.to_string()).collect();
-                    let fixed_ignore_list: Vec<String> = ignore_list.iter().map(|x| format!("./{}", x)).collect();
-                    // TODO: Create a .rielignore parser
-                    if copy_to_area(fs::read_dir(".")
-                    .expect("Failed to read directory.")
-                    .map(|x| x.unwrap().path().display().to_string())
-                        .filter(|x| !fixed_ignore_list.contains(x))
-                        .collect::<Vec<String>>()) 
-                        {
-                            // if copied
-                            return true;
-                        }
-                } else {
-                    println!("Warning: No .rielignore file found. Adding all files.");
-                    // should add all files outside of .riel
-                    if copy_to_area(fs::read_dir(".")
-                    .expect("Failed to read directory.")
-                    .map(|x| x.unwrap().path().display().to_string())
-                        .collect::<Vec<String>>())
-                        {
-                            // if copied
-                            return true;
-                        }
-                }
-            }
-            else {
-                // should add all files specified
-                if copy_to_area(subcommands)
-                {
-                    return true;
-                }
-            }
-        },
-    }
-    false
-}
 fn check_repo() -> bool {
     fs::metadata(".riel").is_ok() &&
     fs::metadata(".riel/commits").is_ok() &&
     fs::metadata(".riel/area").is_ok()
-}
-pub struct Ignores {
-    exists: bool,
-    files: Vec<String>,
-}
-fn get_ignored() -> Ignores {
-    let mut ignored: Vec<String> = Vec::new();
-    let mut exists: bool = false;
-    if fs::metadata("./.rielignore").is_ok() {
-        exists = true;
-        let ignore_file = fs::read_to_string("./.rielignore").expect("Failed to read .rielignore.");
-        for line in ignore_file.lines() {
-            if line.starts_with("#") {
-                continue;
-            }
-            ignored.push(line.to_string());
-        }
-    }
-    Ignores {
-        exists,
-        files: ignored,
-    }
-}
-fn copy_to_area(items: Vec<String>) -> bool {
-    for item in items {
-        if item.starts_with(".riel") || item.starts_with("./.riel") {
-            continue;
-        }
-        if fs::metadata(format!("./{}/", &item)).is_ok() { // directory-folder { // file
-            fs::create_dir(format!(".riel/area/{}", &item)).expect("Failed to create directory.");
-            println!("Organized {}.", item);
-            copy_to_area(fs::read_dir(&item).expect("Failed to read directory.").map(|x| x.unwrap().path().display().to_string()).collect::<Vec<String>>());
-        } else if fs::metadata(&item).is_ok() { // file
-            fs::copy(&item, format!(".riel/area/{}", &item)).expect("Failed to copy item.");
-            println!("Prepared {}.", item);
-        }else{
-            println!("{} does not exist. Usage is: riel add -A/[file1 file2 file3...]", item);
-            return false;
-        }
-    }
-    true
 }
 fn commit(options: Vec<String>, commit_args: Vec<String>) -> bool { 
     let message_option: String = "-m".to_string();
