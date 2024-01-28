@@ -1,7 +1,9 @@
-#![allow(unused_variables, dead_code, unused_imports, unused_mut, unused_assignments)]
+#![allow(unused_variables, unused_imports, dead_code, unused_mut, unused_assignments)]
 //std
 use std::env;
 use std::fs;
+use std::fs::create_dir;
+use std::fs::remove_dir_all;
 use std::fs::File;
 use std::io::Read;
 use std::io::Write;
@@ -9,7 +11,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io;
 use std::net::TcpStream;
-use adding::add::add_files;
+use std::path::Path;
 //mods
 mod mergers;
 mod utils;
@@ -19,6 +21,10 @@ mod adding;
 //internal
 use args_parser::{parse_args, ParsedArgsObject};
 use remotes::tcp_web::web_get_with_url;
+use adding::add::add_files;
+use utils::filemanagers::filemanager::copy_recursive;
+
+use crate::utils::filemanagers::filemanager::read_dir_to_files;
 // consts
 const RIEL_IGNORE_BUFFER: &[u8] = 
 b"# This is a .rielignore file. It is used to ignore files when adding them to the repository.
@@ -29,7 +35,19 @@ const COMMANDS: [&str; 8] = //TODO: Could this be a HashSet?
 "version", "clone"];
 const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
 const VERSION: &str = "0.1.0";
-const HELP: &str = "Welcome to Riel!\n Last help message update: 2024-1-11 by Yeray Romero\n Usage: riel ([options]) [command] [arguments/subcommands] \n\nCommands:\nhelp: Shows this message.\nmount: Mounts a Riel repository in the current directory.\ncommit: Commits changes to the repository.\nadd: Adds files to the repository.\nsudo-destruct: For developer purposes, deletes the repository.\ngoto: Goes to a commit, saving local files and not commiting anything yet.\n\nRiel is still in development.\n";
+const HELP: &str = 
+"Welcome to Riel!
+Last help message update: 2024-1-28 by Yeray Romero
+Usage: riel ([options]) [command] [arguments/subcommands]\n
+Commands:
+help: Shows this message.
+mount: Mounts a Riel repository in the current directory.
+commit: Commits changes to the repository.
+add: Adds files to the repository.
+clone: Clones a repository from a given URL.
+goto: Goes to a commit, saving local files and not commiting anything yet.\n
+sudo-destruct: For developer purposes, deletes the repository.\n
+Remember Riel is still in development.";
 
 fn main() {   
     let args: Vec<String> = env::args().collect();
@@ -208,10 +226,10 @@ fn save_commit_locally(hash: u64, msg: &str) -> bool {
         .expect("Failed to read directory.")
         .map(|x| x.unwrap().path().display().to_string())
         .collect::<Vec<String>>();
-    fs::create_dir(&dest_str).expect("Failed to create directory.");
+    create_dir(&dest_str).expect("Failed to create directory.");
     copy_recursive(std::path::Path::new(src_str), std::path::Path::new(&dest_str));
-    fs::remove_dir_all(".riel/area").expect("Failed to remove area.");
-    fs::create_dir(".riel/area").expect("Failed to create area.");
+    remove_dir_all(".riel/area").expect("Failed to remove area.");
+    create_dir(".riel/area").expect("Failed to create area.");
     //Check if head is empty
     let is_first_commit: bool = check_head();
     if is_first_commit {
@@ -240,52 +258,6 @@ fn prepare_goto(hash: String) -> bool {
         println!("Commit {} does not exist, check your hash or use riel load (Not developed yet)", hash_reduced); //FIXME
         return false;
     }
-    copy_recursive(std::path::Path::new(&dest_str), std::path::Path::new("."));
+    copy_recursive(Path::new(&dest_str), Path::new("."));
     true
-}
-fn copy_recursive(src: &std::path::Path, dest: &std::path::Path) -> bool {
-    if let Err(e) = copy_directory(src, dest) {
-        eprintln!("Failed to copy directory: {}", e);
-        return false;
-    }
-
-    true
-}
-fn copy_directory(src: &std::path::Path, dest: &std::path::Path) -> io::Result<()> {
-    if src.is_dir() {
-        fs::create_dir_all(dest)?;
-
-        for entry in fs::read_dir(src)? {
-            let entry = entry?;
-            let entry_type = entry.file_type()?;
-
-            let new_dest = dest.join(entry.file_name());
-
-            if entry_type.is_dir() {
-                copy_recursive(&entry.path(), &new_dest);
-            } else {
-                fs::copy(&entry.path(), &new_dest)?;
-            }
-        }
-    }
-
-    Ok(())
-}
-fn read_dir_to_files(dir_result: Result<fs::ReadDir, std::io::Error>) -> Result<Vec<File>, String> {
-    let dir_entries = dir_result.map_err(|e| format!("Error reading directory: {}", e))?;
-
-    let files: Vec<File> = dir_entries
-        .filter_map(|entry| {
-            if let Ok(entry) = entry {
-                if entry.file_type().map_or(false, |ft| ft.is_file()) {
-                    if let Ok(file) = File::open(entry.path()) {
-                        return Some(file);
-                    }
-                }
-            }
-            None
-        })
-        .collect();
-
-    Ok(files)
 }

@@ -4,12 +4,10 @@ use std::os::unix;
 use std::path::Path;
 use std::io::BufReader;
 use std::time::UNIX_EPOCH;
-use crate::read_dir_to_files;
+use crate::utils::filemanagers::filemanager::read_dir_to_files;
 use crate::mergers::commit_abstractions::CommitMetadata;
 use crate::utils::datetime::DateTime;
-
 use super::commit_abstractions::CommitModification;
-
 pub fn get_head(file: &File) -> Vec<File> {
     let path: &Path = Path::new(".riel/head");
     let head_read: Result<fs::ReadDir, std::io::Error> = fs::read_dir(path);
