@@ -13,7 +13,7 @@ Alpha to-do list:
 - [ ] CRDT algorithm implemented where possible
 
 Manual installation for Linux:
-1. Install Rust
+1. Install Rust (Nightly version, until, at least, --out-dir is supported)
 2. Clone this repository
 3. Create a folder for the generated binary file: ```mkdir myBinaryFolder```
 3. Build the binary file: ```cargo build --release --out-dir ./myBinaryFolder -Z unstable-options```
