@@ -58,7 +58,8 @@ pub fn receive_directory_structure(stream: &mut TcpStream, base_path: &str) -> b
     println!("Cleaning response...");
     let response_cleaned = clean_response(response);
     println!("{}", response_cleaned);
-    create_structure(response_cleaned, base_path);
+    let structure = create_structure(response_cleaned, base_path);
+    parse_and_write_structure(structure, base_path);
     true
 }
 fn clean_response(response: String) -> String {
@@ -79,4 +80,29 @@ fn create_structure(from: String, here: &str) -> Option<StructureAbstraction> {
     let structure: StructureAbstraction = serde_json::from_str(&from).ok()?;
 
     Some(structure)
+}
+fn parse_and_write_structure(structure: Option<StructureAbstraction>, here: &str) -> bool {
+    if structure.is_none() {
+        return false;
+    }
+    let structure = structure.expect("This structure should not panic here.");
+    let mut queue: VecDeque<StructureAbstraction> = VecDeque::new();
+    queue.push_back(structure);
+    while !queue.is_empty() {
+        let current = queue.pop_front().unwrap();
+        let mut path = here.to_string();
+        path.push_str(&current.name);
+        if current.children.is_empty() {
+            println!("Creating file at {}", path);
+            let mut file = File::create(path).unwrap();
+            file.write_all(b"Hello, world!").unwrap();
+        } else {
+            println!("Creating directory at {}", path);
+            create_dir_all(path).unwrap();
+            for child in current.children {
+                queue.push_back(child);
+            }
+        }
+    }
+    true
 }
