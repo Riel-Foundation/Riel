@@ -1,13 +1,13 @@
+use super::commit_abstractions::CommitModification;
+use crate::mergers::commit_abstractions::CommitMetadata;
+use crate::utils::datetime::DateTime;
+use crate::utils::filemanagers::filemanager::read_dir_to_files;
 use std::fs::{self, File};
+use std::io::BufReader;
 use std::io::Read;
 use std::os::unix;
 use std::path::Path;
-use std::io::BufReader;
 use std::time::UNIX_EPOCH;
-use crate::utils::filemanagers::filemanager::read_dir_to_files;
-use crate::mergers::commit_abstractions::CommitMetadata;
-use crate::utils::datetime::DateTime;
-use super::commit_abstractions::CommitModification;
 pub fn get_head(file: &File) -> Vec<File> {
     let path: &Path = Path::new(".riel/head");
     let head_read: Result<fs::ReadDir, std::io::Error> = fs::read_dir(path);
@@ -22,14 +22,13 @@ pub fn compare_with_head(file: &File, hash: &str, msg: &str, author: &str) -> Co
     if file_in_head.is_none() {
         //TODO: Manage cases where the file is not on the head, maybe all adds
         todo!()
-    }else {
+    } else {
         let head_file: File = file_in_head.unwrap();
         let mut head_reader: BufReader<&File> = BufReader::new(&head_file);
         let mut head_str: String = String::new();
         head_reader.read_to_string(&mut head_str).unwrap();
         let head_lines: Vec<&str> = head_str.lines().collect();
 
-        
         todo!()
     }
 }

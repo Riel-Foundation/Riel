@@ -3,10 +3,10 @@ pub struct CommitMetadata {
     pub hash: String,
     pub message: String,
     pub author: String,
-    pub modifications: Vec<CommitModification>
+    pub modifications: Vec<CommitModification>,
 }
 #[derive(Clone)]
-pub struct CommitModification { 
+pub struct CommitModification {
     pub date: DateTime,
     pub adds: Vec<CommitLine>,
     pub removes: Vec<CommitLine>,
@@ -16,7 +16,7 @@ impl CommitModification {
         let clone1: CommitModification = self.clone();
         let clone2: CommitModification = other.clone();
         let difference: bool = self.date > other.date;
-        
+
         if !difference {
             // they are equal
             /*let hash1: u64 = hash_string(&self.changes.join(""));
@@ -41,11 +41,11 @@ impl CommitModification {
                 // other is greater
                 return clone2;
             }
-            }
         }
+    }
 }
 #[derive(Clone)]
 pub struct CommitLine {
-    pub line: String, 
+    pub line: String,
     pub line_number: u32,
 }

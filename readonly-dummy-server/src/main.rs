@@ -1,16 +1,19 @@
 use actix_web::dev::Url;
+use actix_web::HttpResponse;
 use actix_web::{web, App, HttpRequest, HttpServer, Responder};
+use serde::Serialize;
 use std::fs::{self, ReadDir};
 use std::io::Read;
 use std::path::{Path, PathBuf};
-use actix_web::HttpResponse;
-use serde::Serialize;
 const URL_CONST: &str = "127.0.0.1:4000";
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
-            .service(web::resource("/{username}/{repo}/exists").route(web::get().to(get_repo_confirmation)))
+            .service(
+                web::resource("/{username}/{repo}/exists")
+                    .route(web::get().to(get_repo_confirmation)),
+            )
             .service(web::resource("/{username}/{repo}/").route(web::get().to(get_repo_structure)))
             .service(actix_files::Files::new("/", "./repos"))
     })
@@ -38,7 +41,7 @@ async fn get_repo_structure(info: web::Path<(String, String)>) -> impl Responder
 struct dir_structure {
     name: String,
     children: Vec<dir_structure>,
-    url: Option<String>
+    url: Option<String>,
 }
 fn get_dir_structure(path: PathBuf) -> dir_structure {
     let mut children: Vec<dir_structure> = Vec::new();
@@ -62,6 +65,6 @@ fn get_dir_structure(path: PathBuf) -> dir_structure {
     dir_structure {
         name,
         children,
-        url
+        url,
     }
 }

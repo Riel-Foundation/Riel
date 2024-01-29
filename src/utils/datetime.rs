@@ -12,7 +12,15 @@ pub struct DateTime {
 }
 
 impl DateTime {
-    pub fn new(year: i32, month: u32, day: u32, hours: u32, minutes: u32, seconds: u32, milliseconds: u32) -> DateTime {
+    pub fn new(
+        year: i32,
+        month: u32,
+        day: u32,
+        hours: u32,
+        minutes: u32,
+        seconds: u32,
+        milliseconds: u32,
+    ) -> DateTime {
         DateTime {
             year,
             month,
@@ -28,12 +36,13 @@ impl DateTime {
         DateTime::from(base)
     }
     fn from(time: SystemTime) -> DateTime {
-       if let Ok(duration) = time.duration_since(SystemTime::UNIX_EPOCH) {
+        if let Ok(duration) = time.duration_since(SystemTime::UNIX_EPOCH) {
             let seconds: u64 = duration.as_secs();
             let milliseconds: u32 = duration.subsec_millis();
 
             let (years, remaining_seconds) = (seconds / 31536000, seconds % 31536000);
-            let (months, remaining_seconds) = (remaining_seconds / 2592000, remaining_seconds % 2592000);
+            let (months, remaining_seconds) =
+                (remaining_seconds / 2592000, remaining_seconds % 2592000);
             let (days, remaining_seconds) = (remaining_seconds / 86400, remaining_seconds % 86400);
             let (hours, remaining_seconds) = (remaining_seconds / 3600, remaining_seconds % 3600);
             let (minutes, remaining_seconds) = (remaining_seconds / 60, remaining_seconds % 60);
@@ -55,7 +64,8 @@ impl DateTime {
 
 impl Ord for DateTime {
     fn cmp(&self, other: &DateTime) -> Ordering {
-        self.year.cmp(&other.year)
+        self.year
+            .cmp(&other.year)
             .then_with(|| self.month.cmp(&other.month))
             .then_with(|| self.day.cmp(&other.day))
             .then_with(|| self.hours.cmp(&other.hours))

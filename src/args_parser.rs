@@ -22,21 +22,22 @@ impl ParsedArgsObject {
 
 pub(crate) fn parse_args(args: Vec<String>) -> Option<ParsedArgsObject> {
     let mut command: String = String::new();
-    let options: Vec<String> =
-    args.iter()
+    let options: Vec<String> = args
+        .iter()
         .filter(|x| x.starts_with("-"))
         .map(|x| x.to_string())
         .collect();
-    let possible_commands: Vec<String> =
-    args.iter()
+    let possible_commands: Vec<String> = args
+        .iter()
         .filter(|x| !x.starts_with("-"))
-        .map(|x| x.to_string()).collect();
+        .map(|x| x.to_string())
+        .collect();
     let coincidences: i16 = possible_commands.len() as i16;
     match coincidences {
         0 => {
             println!("{}", RIEL_WORKS);
             return None;
-        },
+        }
         _ => {
             command = possible_commands[0].to_string();
             if !COMMANDS.contains(&command.as_str()) {
@@ -45,11 +46,14 @@ pub(crate) fn parse_args(args: Vec<String>) -> Option<ParsedArgsObject> {
             }
         }
     }
-    let subcommands: Vec<String> = possible_commands.iter().skip(1).map(|x| x.to_string()).collect();
+    let subcommands: Vec<String> = possible_commands
+        .iter()
+        .skip(1)
+        .map(|x| x.to_string())
+        .collect();
     return Some(ParsedArgsObject {
         command,
         subcommands,
         options,
     });
-
 }
