@@ -1,7 +1,17 @@
 use std::collections::{HashMap, VecDeque};
+use std::error::Error;
 use std::fs::{create_dir_all, File};
 use std::io::{Read, Write};
 use std::net::TcpStream;
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Result as JsonResult, Value};
+
+#[derive(Debug, Deserialize)]
+struct StructureAbstraction {
+  name: String,
+  children: Vec<StructureAbstraction>,
+  url: Option<String>,
+}
 pub fn web_get_with_url(repo_url: &str) -> Option<TcpStream> {
   println!("Connecting to repository at {}...", repo_url);
   let parts = repo_url.split("/").collect::<Vec<&str>>();
@@ -47,7 +57,7 @@ pub fn receive_directory_structure(stream: &mut TcpStream, base_path: &str) -> b
   println!("Cleaning response...");
   let response_cleaned = clean_response(response); 
   println!("{}", response_cleaned);
-  //TODO: Create the files accordingly
+  create_structure(response_cleaned, base_path);
   true
 }
 fn clean_response(response: String) -> String {
@@ -63,4 +73,14 @@ fn clean_response(response: String) -> String {
   }
   //println!("Clean lines: {:?}", clean_lines);
   clean_lines.join("\n")
+}
+fn create_structure(from: String, here: &str) -> Option<StructureAbstraction> {
+    let structure: Value = json!(from);
+
+    let json_result: JsonResult<StructureAbstraction> =
+        serde_json::from_value(structure.clone());
+
+    let json: StructureAbstraction = json_result.ok()?;
+
+    Some(json)
 }
