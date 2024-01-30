@@ -3,19 +3,61 @@ Version control system inspired by Conflict-Free Resolution Data-Types and Logoo
 
 State: Not ready for production yet
 
-Alpha to-do list:
-- [x] Initializing repositories
-- [x] Binary executable file (Try something like: ```cargo build --out-dir ./binary -Z unstable-options```)
-- [x] Adds, commits
-- [X] Goto, rollback
-- [ ] Author metadata
+Alpha to-do list (Almost there):
+- [ ] Config
+- [ ] Remotes
 - [ ] Thrust (push), load (pull) from remotes
+Beta to-do list:
+- [ ] Author metadata
+- [ ] Merging
 - [ ] CRDT algorithm implemented where possible
+- [ ] Branching
+Before release to-do list:
+- [ ] Compression, deduplication, misc features...
+- [ ] Documentation
+- [ ] Tests
+- [ ] Benchmarks
+- [ ] Release
 
-Manual installation for Linux:
-1. Install Rust (Nightly version, until, at least, --out-dir is supported)
-2. Clone this repository
-3. Create a folder for the generated binary file: ```mkdir myBinaryFolder```
-3. Build the binary file: ```cargo build --release --out-dir ./myBinaryFolder -Z unstable-options```
-4. Copy the binary file to your PATH: ```cp ./myBinaryFolder/riel /usr/local/bin```
-Note: Updating the binary file is as simple as doing 3 and 4 again inside the repository's folder
+
+### Manual installation for Linux:
+- Install Rust
+- Clone this repository
+- Run ```cargo build --release```
+- Optional: Remove the dummy server ((Use rm at your own risk)) ```rm -rf ./readonly-dummy-server```
+- Copy the binary file from ```target/release/riel``` to ```/usr/local/bin/```
+
+### Repositories structure as a json:
+```json
+{
+  "name": "repository-name",
+  "children": [
+    {
+      "name": ".riel",
+      "children": [{"Internal metadata is not clearly defined yet?" : "No, it isn't"}]
+    },
+    {
+    "name": "folder1",
+    "children": [
+                  {
+                    "name": "helloworld.rs",
+                    "children": [],
+                    "url": "https://myserver.local/user/repository-name/folder1/helloworld.rs"
+                  }
+                ],
+    "url": null
+    },
+    {
+    "name": "arootfile.txt",
+    "children": [],
+    "url": "https://myserver.local/user/repository-name/arootfile.txt"
+    },
+    {
+      "name": ".rielignore",
+      "children": [],
+      "url": "https://myserver.local/user/repository-name/.rielignore"
+    }
+  ]
+}
+```
+
