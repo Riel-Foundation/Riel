@@ -105,7 +105,7 @@ fn structure_process(mut q: &mut VecDeque<StructureAbstraction>, path: &str) {
                     fs::write(&child_path, file_content)
                     .expect(&format!("Failed to write file at {}.", child_path));
                 }
-            } else if let None = child.url { //this child's a directory
+            } else { //this child's a directory
                 fs::create_dir_all(&child_path).expect("Failed to create directory.");
                 q.push_back(child);
                 structure_process(q, &child_path);
