@@ -2,9 +2,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Result as JsonResult, Value};
 use std::collections::{HashMap, VecDeque};
 use std::error::Error;
-use std::fs::{create_dir_all, File};
+use std::fs;
 use std::io::{Read, Write};
 use std::net::TcpStream;
+use std::ptr::null;
 
 #[derive(Debug, Deserialize)]
 struct StructureAbstraction {
@@ -12,13 +13,13 @@ struct StructureAbstraction {
     children: Vec<StructureAbstraction>,
     url: Option<String>,
 }
-pub fn web_get_with_url(repo_url: &str) -> Option<TcpStream> {
-    println!("Connecting to repository at {}...", repo_url);
-    let parts = repo_url.split("/").collect::<Vec<&str>>();
+pub fn web_get_with_url(url: &str) -> Option<TcpStream> {
+    println!("Connecting to {}...", url);
+    let parts = url.split("/").collect::<Vec<&str>>();
     let host = parts[0];
-    println!("Recognized host: {}", host);
+    //println!("Recognized host: {}", host);
     let path = parts[1..].join("/");
-    println!("Recognized path: {}", path);
+    //println!("Recognized path: {}", path);
     let stream_result: Result<TcpStream, _> = TcpStream::connect(host);
     let mut stream: TcpStream = stream_result.ok()?;
     let request: String = format!(
@@ -88,21 +89,27 @@ fn parse_and_write_structure(structure: Option<StructureAbstraction>, here: &str
     let structure = structure.expect("This structure should not panic here.");
     let mut queue: VecDeque<StructureAbstraction> = VecDeque::new();
     queue.push_back(structure);
-    while !queue.is_empty() {
-        let current = queue.pop_front().unwrap();
-        let mut path = here.to_string();
-        path.push_str(&current.name);
-        if current.children.is_empty() {
-            println!("Creating file at {}", path);
-            let mut file = File::create(path).unwrap();
-            file.write_all(b"Hello, world!").unwrap();
-        } else {
-            println!("Creating directory at {}", path);
-            create_dir_all(path).unwrap();
-            for child in current.children {
-                queue.push_back(child);
+    structure_process(&mut queue, here);
+    true
+}
+fn structure_process(mut q: &mut VecDeque<StructureAbstraction>, path: &str) {
+    if let Some(structure) = q.pop_front() {
+        for child in structure.children {
+            let child_path = format!("{}/{}", path, child.name);
+            if let Some(url) = child.url { //this child's a file
+                let mut stream = web_get_with_url(&url);
+                if let Some(mut s) = stream {
+                    let file_content = read_http_response(&mut s)
+                        .expect(
+                            &format!("The reader should have worked at {}", url));
+                    fs::write(&child_path, file_content)
+                    .expect(&format!("Failed to write file at {}.", child_path));
+                }
+            } else if let None = child.url { //this child's a directory
+                fs::create_dir_all(&child_path).expect("Failed to create directory.");
+                q.push_back(child);
+                structure_process(q, &child_path);
             }
         }
     }
-    true
 }
