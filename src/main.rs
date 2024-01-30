@@ -47,7 +47,7 @@ const COMMANDS: [&str; 8] = //TODO: Could this be a HashSet?
         "clone",
     ];
 const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
-const VERSION: &str = "0.1.0";
+const VERSION: &str = "0.2.0";
 const HELP: &str = "Welcome to Riel!
 Last help message update: 2024-1-28 by Yeray Romero
 Usage: riel ([options]) [command] [arguments/subcommands]\n
