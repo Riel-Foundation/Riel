@@ -2,17 +2,18 @@
 Version control system inspired by Conflict-Free Resolution Data-Types and Logoot algorithm
 
 State: Not ready for production yet
-
-Alpha to-do list (Almost there):
+### Current features:
+Adding, commiting, pseudo-random commit hashing, cloning using an https request via a tcp stream
+### Alpha to-do list (Almost there):
 - [ ] Config
 - [ ] Remotes
 - [ ] Thrust (push), load (pull) from remotes
-Beta to-do list:
+### Beta to-do list:
 - [ ] Author metadata
 - [ ] Merging
 - [ ] CRDT algorithm implemented where possible
 - [ ] Branching
-Before release to-do list:
+### Before release to-do list:
 - [ ] Compression, deduplication, misc features...
 - [ ] Documentation
 - [ ] Tests
