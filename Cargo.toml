@@ -1,4 +1,3 @@
-workspace = { members = ["readonly-dummy-server"] }
 [package]
 name = "riel"
 version = "0.0.3"
