@@ -25,7 +25,6 @@ Adding, commiting, pseudo-random commit hashing, cloning using an https request 
 - Install Rust
 - Clone this repository
 - Run ```cargo build --release```
-- Optional: Remove the dummy server ((Use rm at your own risk)) ```rm -rf ./readonly-dummy-server```
 - Copy the binary file from ```target/release/riel``` to ```/usr/local/bin/```
 
 ### Repositories structure as a json:
