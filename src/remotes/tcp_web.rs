@@ -86,28 +86,12 @@ fn structure_process(mut q: &mut VecDeque<StructureAbstraction>, path: &str) {
                 //this child's a file
                 let mut stream = web_get_with_url(&url);
                 if let Some(mut s) = stream {
-                    let file_content = process_file(&mut s, &url);
-                    match file_content.failed {
-                        true => {
-                            println!("Failed to process file.");
-                            continue;
-                        }
-                        false => match file_content.is_utf8 {
-                            true => {
-                                fs::write(&child_path, file_content.utf8)
-                                    .expect("Failed to write file.");
-                            }
-                            false => {
-                                fs::write(&child_path, file_content.binary)
-                                    .expect("Failed to write file.");
-                                // we now remove the header from the http
-                                if try_clean_file(&child_path) {
-                                    println!("Cleaned file. Binary file was cloned successfully.");
-                                } else {
-                                    println!("Failed to clean binary file.");
-                                }
-                            }
-                        },
+                    let file_content = process_binary_file(&mut s);
+                    if let Some(content) = file_content {
+                        let mut file = fs::File::create(&child_path).expect("Failed to create file.");
+                        file.write_all(&content).expect("Failed to write to file.");
+                    }else{
+                        println!("Failed to clone file.");
                     }
                 }
             } else {
@@ -119,61 +103,13 @@ fn structure_process(mut q: &mut VecDeque<StructureAbstraction>, path: &str) {
         }
     }
 }
-fn process_file(stream: &mut TcpStream, tcp_url: &str) -> FileContent {
-    
-    let mut buffer: String = String::new();
-    let mut stream_clone: TcpStream = stream.try_clone().unwrap();
-    let response: Result<usize, io::Error> = stream.read_to_string(&mut buffer);
-    if response.is_err() && response.err().unwrap().kind() == std::io::ErrorKind::InvalidData {
-        println!("Invalid data received. Non-utf8 files are not supported yet.");
-        println!("Trying to read as binary...");
-        return process_binary_file(&mut web_get_with_url(tcp_url).unwrap());
-    }
-    buffer = clean_response(buffer);
-    FileContent {
-        is_utf8: true,
-        failed: false,
-        utf8: buffer,
-        binary: Vec::new(),
-    }
-}
-fn process_binary_file(stream: &mut TcpStream) -> FileContent {
+fn process_binary_file(stream: &mut TcpStream) -> Option<Vec<u8>>{
     let mut buffer: Vec<u8> = Vec::new();
-    let response = stream.read_to_end(&mut buffer);
-    if response.is_err() {
-        println!("Failed to read binary file.");
-        return FileContent {
-            is_utf8: false,
-            failed: true,
-            utf8: String::new(),
-            binary: Vec::new(),
-        };
-    }
-    let binary: Vec<u8> = buffer;
-    FileContent {
-        is_utf8: false,
-        failed: false,
-        utf8: String::new(),
-        binary,
-    }
+    let response = stream.read_to_end(&mut buffer).ok()?;
+    try_clean_buffer(buffer)
 }
-fn try_clean_file(path: &str) -> bool {
-    let mut file = fs::File::open(path).expect("Failed to open file.");
-    let mut buffer: Vec<u8> = Vec::new();
-    let response = file.read_to_end(&mut buffer);
-    if response.is_err() {
-        println!("Failed to read binary file.");
-        return false;
-    }
+fn try_clean_buffer(buffer: Vec<u8>) -> Option<Vec<u8>> {
     let binary: Vec<u8> = 
     buffer.split(|&x| x == b"\n"[0]).collect::<Vec<&[u8]>>()[10..].join(&b"\n"[0]);
-    let mut file = fs::File::create(path).expect("Failed to create file.");
-    let response = file.write_all(&binary);
-    response.is_ok()
-}
-struct FileContent {
-    is_utf8: bool,
-    utf8: String,
-    binary: Vec<u8>,
-    failed: bool,
+    Some(binary)
 }
