@@ -88,9 +88,10 @@ fn structure_process(mut q: &mut VecDeque<StructureAbstraction>, path: &str) {
                 if let Some(mut s) = stream {
                     let file_content = process_binary_file(&mut s);
                     if let Some(content) = file_content {
-                        let mut file = fs::File::create(&child_path).expect("Failed to create file.");
+                        let mut file =
+                            fs::File::create(&child_path).expect("Failed to create file.");
                         file.write_all(&content).expect("Failed to write to file.");
-                    }else{
+                    } else {
                         println!("Failed to clone file.");
                     }
                 }
@@ -103,13 +104,13 @@ fn structure_process(mut q: &mut VecDeque<StructureAbstraction>, path: &str) {
         }
     }
 }
-fn process_binary_file(stream: &mut TcpStream) -> Option<Vec<u8>>{
+fn process_binary_file(stream: &mut TcpStream) -> Option<Vec<u8>> {
     let mut buffer: Vec<u8> = Vec::new();
     let response = stream.read_to_end(&mut buffer).ok()?;
     try_clean_buffer(buffer)
 }
 fn try_clean_buffer(buffer: Vec<u8>) -> Option<Vec<u8>> {
-    let binary: Vec<u8> = 
-    buffer.split(|&x| x == b"\n"[0]).collect::<Vec<&[u8]>>()[10..].join(&b"\n"[0]);
+    let binary: Vec<u8> =
+        buffer.split(|&x| x == b"\n"[0]).collect::<Vec<&[u8]>>()[10..].join(&b"\n"[0]);
     Some(binary)
 }

@@ -33,19 +33,11 @@ pub(crate) fn parse_args(args: Vec<String>) -> Option<ParsedArgsObject> {
         .map(|x| x.to_string())
         .collect();
     let coincidences: i16 = possible_commands.len() as i16;
-    match coincidences {
-        0 => {
-            println!("{}", RIEL_WORKS);
-            return None;
-        }
-        _ => {
-            command = possible_commands[0].to_string();
-            if !COMMANDS.contains(&command.as_str()) {
-                println!("No such command: {}.", command);
-                return None;
-            }
-        }
-    }
+    command = if coincidences == 0 {
+        String::new()
+    } else {
+        possible_commands[0].clone()
+    };
     let subcommands: Vec<String> = possible_commands
         .iter()
         .skip(1)

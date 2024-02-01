@@ -21,6 +21,7 @@ use std::path::Path;
 //mods
 mod adding;
 mod args_parser;
+mod help;
 mod mergers;
 mod remotes;
 mod utils;
@@ -48,25 +49,9 @@ const COMMANDS: [&str; 8] = //TODO: Could this be a HashSet?
     ];
 const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
 const VERSION: &str = "0.2.2";
-const HELP: &str = "Welcome to Riel!
-Last help message update: 2024-1-28 by Yeray Romero
-Usage: riel ([options]) [command] [arguments/subcommands]\n
-Commands:
-help: Shows this message.
-mount: Mounts a Riel repository in the current directory.
-commit: Commits changes to the repository.
-add: Adds files to the repository.
-clone: Clones a repository from a given URL.
-goto: Goes to a commit, saving local files and not commiting anything yet.\n
-sudo-destruct: For developer purposes, deletes the repository.\n
-Remember Riel is still in development.";
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.contains(&"--help".to_string()) || args.contains(&"help".to_string()) {
-        println!("{}", HELP); //TODO: Change this to exec a help command, handling something like riel help add
-        return;
-    }
     let rielless_args: Vec<String> = args
         .iter()
         .filter(|x| !x.contains("riel"))
@@ -87,16 +72,29 @@ fn main() {
 }
 fn exec(command: &str, args: ParsedArgsObject) -> () {
     // always-working commands: help, version, clone
+    /*TODO
+    if args.options().contains(&String::from("--help")) {
+
+    }
+     */
+
     if command == "help" {
-        println!("{}", HELP);
+        help::generic_help();
         return;
     }
     if command == "clone" {
         clone(args.subcommands(), args.options());
         return;
     }
-    if command == "version" {
+    if command == "version"
+        || args.options().contains(&String::from("-v"))
+        || args.options().contains(&String::from("--version"))
+    {
         println!("Riel v{}.", VERSION);
+        return;
+    }
+    if command == "" {
+        println!("{}", RIEL_WORKS);
         return;
     }
     match check_repo() {
@@ -110,7 +108,10 @@ fn exec(command: &str, args: ParsedArgsObject) -> () {
         }
         false => {
             match command {
-                "mount" => mount_repo(), // for now, no subcommands,
+                "mount" => {
+                    mount_repo(); // for now, no subcommands,
+                    return;
+                } 
                 _ => {
                     println!("Riel repository does not exist in this directory.");
                     return;
