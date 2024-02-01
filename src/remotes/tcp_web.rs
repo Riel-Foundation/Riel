@@ -157,7 +157,15 @@ fn process_binary_file(stream: &mut TcpStream) -> FileContent {
     }
 }
 fn try_clean_file(path: &str) -> bool {
-  //TODO
+    let mut file = fs::File::open(path).expect("Failed to open file.");
+    let mut buffer: Vec<u8> = Vec::new();
+    let response = file.read_to_end(&mut buffer);
+    if response.is_err() {
+        println!("Failed to read binary file.");
+        return false;
+    }
+    let binary: Vec<u8> = 
+    buffer.split(|&x| x == b"\n"[0]).collect::<Vec<&[u8]>>()[9..].join(&b"\n"[0]);
     false
 }
 struct FileContent {
