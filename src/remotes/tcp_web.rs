@@ -120,6 +120,7 @@ fn structure_process(mut q: &mut VecDeque<StructureAbstraction>, path: &str) {
     }
 }
 fn process_file(stream: &mut TcpStream, tcp_url: &str) -> FileContent {
+    
     let mut buffer: String = String::new();
     let mut stream_clone: TcpStream = stream.try_clone().unwrap();
     let response: Result<usize, io::Error> = stream.read_to_string(&mut buffer);
@@ -165,8 +166,10 @@ fn try_clean_file(path: &str) -> bool {
         return false;
     }
     let binary: Vec<u8> = 
-    buffer.split(|&x| x == b"\n"[0]).collect::<Vec<&[u8]>>()[9..].join(&b"\n"[0]);
-    false
+    buffer.split(|&x| x == b"\n"[0]).collect::<Vec<&[u8]>>()[10..].join(&b"\n"[0]);
+    let mut file = fs::File::create(path).expect("Failed to create file.");
+    let response = file.write_all(&binary);
+    response.is_ok()
 }
 struct FileContent {
     is_utf8: bool,
