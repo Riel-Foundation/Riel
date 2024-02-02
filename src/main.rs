@@ -69,82 +69,16 @@ fn main() {
     }
 }
 fn exec(command: &str, args: ParsedArgsObject) -> () {
-    // always-working commands: help, version, clone
-    /*TODO
-    if args.options().contains(&String::from("--help")) {
-
-    }
-     */
-
-    if command == "help" {
-        help::generic_help();
-        return;
-    }
-    if command == "clone" {
-        clone(args.subcommands(), args.options());
-        return;
-    }
-    if command == "version"
-        || args.options().contains(&String::from("-v"))
-        || args.options().contains(&String::from("--version"))
-    {
-        println!("Riel v{}.", VERSION);
-        return;
-    }
-    if command == "" {
+    if command == "" && args.options().len() == 0 {
         println!("{}", RIEL_WORKS);
-        return;
-    }
-    match check_repo() {
-        true => {
-            if command == "mount" {
-                println!("Riel repository already exists in this directory.");
-                return;
-            }
-            // clone IS allowed because it will create a new repo inside the current one
-            // TODO: Subrepo support
+    } else if !COMMANDS.contains(&command) {
+        check_options_basic(args.options(), command);
+    } else {
+        if check_repo() {
+            try_repo_exec(command, args);
+        } else {
+            try_no_repo_exec(command, args);
         }
-        false => {
-            match command {
-                "mount" => {
-                    mount_repo(); // for now, no subcommands,
-                    return;
-                } 
-                _ => {
-                    println!("Riel repository does not exist in this directory.");
-                    return;
-                }
-            }
-        }
-    }
-    match command {
-        "commit" => {
-            if commit(args.options(), args.subcommands()) {
-                println!("Commited.");
-            } else {
-                println!("Commit failed.");
-            }
-        }
-        "add" => {
-            if add_files(args.subcommands(), args.options()) {
-                println!("Added file(s).");
-            } else {
-                println!("Could not add all the files.");
-            }
-        }
-        "sudo-destruct" => {
-            drop(args.subcommands());
-            println!("Riel is still in development. This command could be removed in the future.");
-            fs::remove_dir_all(".riel").expect("Failed to remove .riel directory.");
-        }
-        "goto" => match args.subcommands().len() {
-            0 => println!("No commit specified."),
-            1 => {
-                prepare_goto(args.subcommands()[0].to_string());
-            }
-            _ => println!("Goto only accepts one argument."),
-        },
-        _ => println!("Failed to parse command here."),
     }
 }
 fn clone(subcommands: Vec<String>, options: Vec<String>) -> () {
@@ -283,4 +217,63 @@ fn prepare_goto(hash: String) -> bool {
     }
     copy_recursive(Path::new(&dest_str), Path::new("."));
     true
+}
+fn check_options_basic(options: Vec<String>, command: &str) -> () {
+    let options = if options.len() > 0 {
+        options
+    } else {
+        vec![String::new()]
+    };
+
+    if options.len() > 1 {
+        println!("Only one option is allowed without commands.");
+        return;
+    } else {
+        if options[0] == "--help" {
+            help::generic_help();
+        } else if options[0] == "--version" || options[0] == "-v" {
+            println!("Riel version: {}", VERSION);
+        } else {
+            println!("Riel couldn't understand your command. Try --help for more information.");
+        }
+    }
+}
+fn try_repo_exec(command: &str, args: ParsedArgsObject) -> () {
+    match command {
+        "clone" => clone(args.subcommands(), args.options()),
+        "commit" => {
+            if commit(args.options(), args.subcommands()) {
+                println!("Commited.");
+            } else {
+                println!("Commit failed.");
+            }
+        }
+        "add" => {
+            if add_files(args.subcommands(), args.options()) {
+                println!("Added file(s).");
+            } else {
+                println!("Could not add all the files.");
+            }
+        }
+        "sudo-destruct" => {
+            drop(args.subcommands());
+            println!("Riel is still in development. This command could be removed in the future.");
+            fs::remove_dir_all(".riel").expect("Failed to remove .riel directory.");
+        }
+        "goto" => match args.subcommands().len() {
+            0 => println!("No commit specified."),
+            1 => {
+                prepare_goto(args.subcommands()[0].to_string());
+            }
+            _ => println!("Goto only accepts one argument."),
+        },
+        _ => println!("Failed to parse command here."),
+    }
+}
+fn try_no_repo_exec(command: &str, args: ParsedArgsObject) -> () {
+    match command {
+        "mount" => mount_repo(),
+        "clone" => clone(args.subcommands(), args.options()),
+        _ => println!("Failed to parse command here."),
+    }
 }
