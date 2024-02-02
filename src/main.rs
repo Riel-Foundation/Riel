@@ -1,10 +1,10 @@
-#![allow(
+/*#![allow(
     unused_variables,
     unused_imports,
     dead_code,
     unused_mut,
     unused_assignments
-)]
+)]*/
 //std
 use std::collections::hash_map::DefaultHasher;
 use std::env;
@@ -13,8 +13,6 @@ use std::fs::create_dir;
 use std::fs::remove_dir_all;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
-use std::io;
-use std::io::Read;
 use std::io::Write;
 use std::net::TcpStream;
 use std::path::Path;

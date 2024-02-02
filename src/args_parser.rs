@@ -1,6 +1,3 @@
-use super::COMMANDS;
-use super::RIEL_WORKS;
-
 #[derive(Clone)]
 pub struct ParsedArgsObject {
     command: String,
@@ -21,7 +18,7 @@ impl ParsedArgsObject {
 }
 
 pub(crate) fn parse_args(args: Vec<String>) -> Option<ParsedArgsObject> {
-    let mut command: String = String::new();
+    let command: String;
     let options: Vec<String> = args
         .iter()
         .filter(|x| x.starts_with("-"))

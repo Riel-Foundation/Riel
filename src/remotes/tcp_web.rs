@@ -1,15 +1,8 @@
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Result as JsonResult, Value};
-use std::collections::{HashMap, VecDeque};
-use std::error::Error;
-use std::ffi::{OsStr, OsString};
+use serde::Deserialize;
+use std::collections::VecDeque;
 use std::fs;
-use std::io::{self, BufRead, BufReader, Read, Write};
+use std::io::{Read, Write};
 use std::net::TcpStream;
-use std::os::unix::ffi::OsStrExt;
-use std::os::unix::fs::PermissionsExt;
-use std::ptr::null;
-
 #[derive(Debug, Deserialize)]
 struct StructureAbstraction {
     name: String,
@@ -48,12 +41,12 @@ pub fn receive_directory_structure(stream: &mut TcpStream, base_path: &str) -> b
     println!("Cleaning response...");
     let response_cleaned = clean_response(response);
     println!("{}", response_cleaned);
-    let structure = create_structure(response_cleaned, base_path);
+    let structure = create_structure(response_cleaned);
     parse_and_write_structure(structure, base_path);
     true
 }
 fn clean_response(response: String) -> String {
-    let mut full_lines = response.lines().collect::<Vec<&str>>();
+    let full_lines = response.lines().collect::<Vec<&str>>();
     let mut clean_lines: Vec<&str> = Vec::new();
     for line_index in 0..full_lines.len() {
         if full_lines[line_index].trim().is_empty() {
@@ -63,7 +56,7 @@ fn clean_response(response: String) -> String {
     }
     clean_lines.join("\n")
 }
-fn create_structure(from: String, here: &str) -> Option<StructureAbstraction> {
+fn create_structure(from: String) -> Option<StructureAbstraction> {
     let structure: StructureAbstraction = serde_json::from_str(&from).ok()?;
 
     Some(structure)
@@ -78,13 +71,13 @@ fn parse_and_write_structure(structure: Option<StructureAbstraction>, here: &str
     structure_process(&mut queue, here);
     true
 }
-fn structure_process(mut q: &mut VecDeque<StructureAbstraction>, path: &str) {
+fn structure_process(q: &mut VecDeque<StructureAbstraction>, path: &str) {
     if let Some(structure) = q.pop_front() {
         for child in structure.children {
             let child_path = format!("{}/{}", path, child.name);
             if let Some(url) = child.url {
                 //this child's a file
-                let mut stream = web_get_with_url(&url);
+                let stream = web_get_with_url(&url);
                 if let Some(mut s) = stream {
                     let file_content = process_binary_file(&mut s);
                     if let Some(content) = file_content {
@@ -106,7 +99,7 @@ fn structure_process(mut q: &mut VecDeque<StructureAbstraction>, path: &str) {
 }
 fn process_binary_file(stream: &mut TcpStream) -> Option<Vec<u8>> {
     let mut buffer: Vec<u8> = Vec::new();
-    let response = stream.read_to_end(&mut buffer).ok()?;
+    stream.read_to_end(&mut buffer).ok()?;
     try_clean_buffer(buffer)
 }
 fn try_clean_buffer(buffer: Vec<u8>) -> Option<Vec<u8>> {
