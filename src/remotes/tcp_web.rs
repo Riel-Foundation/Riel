@@ -40,7 +40,6 @@ pub fn receive_directory_structure(stream: &mut TcpStream, base_path: &str) -> b
     let response = read_http_response(stream).unwrap();
     println!("Cleaning response...");
     let response_cleaned = clean_response(response);
-    println!("{}", response_cleaned);
     let structure = create_structure(response_cleaned);
     parse_and_write_structure(structure, base_path);
     true
@@ -104,6 +103,10 @@ fn process_binary_file(stream: &mut TcpStream) -> Option<Vec<u8>> {
 }
 fn try_clean_buffer(buffer: Vec<u8>) -> Option<Vec<u8>> {
     let binary: Vec<u8> =
-        buffer.split(|&x| x == b"\n"[0]).collect::<Vec<&[u8]>>()[10..].join(&b"\n"[0]);
+        buffer.split(|&x| x == b"\n"[0]).collect::<Vec<&[u8]>>().join(&b"\n"[0]);
+    if binary.len() < 10 {
+        return None; //TODO
+    }
+    let clean_binary: Vec<u8> = binary[10..].to_vec();
     Some(binary)
 }

@@ -28,7 +28,6 @@ use adding::add::add_files;
 use args_parser::{parse_args, ParsedArgsObject};
 use remotes::tcp_web::web_get_with_url;
 use utils::filemanagers::filemanager::copy_recursive;
-
 use crate::utils::filemanagers::filemanager::read_dir_to_files;
 // consts
 const RIEL_IGNORE_BUFFER: &[u8] =
@@ -46,7 +45,7 @@ const COMMANDS: [&str; 8] = //TODO: Could this be a HashSet?
         "clone",
     ];
 const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
-const VERSION: &str = "0.2.2";
+const VERSION: &str = "0.2.21";
 
 fn main() {
     let args: Vec<String> = env::args().collect();
