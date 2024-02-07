@@ -24,8 +24,12 @@ Adding, commiting, pseudo-random commit hashing, cloning using an https request 
 ### Manual installation for Linux:
 - Install Rust
 - Clone this repository
-- Run ```cargo build --release```
-- Copy the binary file from ```target/release/riel``` to ```/usr/local/bin/```
+- Run ```make dev``` or ```make all``` in root directory
+- In short, ```
+  git clone https://www.github.com/riel-foundation/riel
+  cd riel
+  make dev
+  ```
 
 ### Repositories structure as a json:
 ```json
