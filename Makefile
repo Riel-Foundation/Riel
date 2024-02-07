@@ -7,6 +7,7 @@ dev:
 	cargo build > /dev/null 2>&1
 	strip target/debug/riel
 	sudo cp target/debug/riel /usr/local/bin/
+
 strip:
 	strip target/release/riel
 
@@ -17,6 +18,6 @@ clean:
 	cargo clean
 
 uninstall:
-	rm /usr/local/bin/riel
+	sudo rm /usr/local/bin/riel
 
 all: build strip install clean
