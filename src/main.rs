@@ -1,10 +1,10 @@
-/*#![allow(
+#![allow(
     unused_variables,
     unused_imports,
     dead_code,
     unused_mut,
     unused_assignments
-)]*/
+)]
 //std
 use std::collections::hash_map::DefaultHasher;
 use std::env;
@@ -45,7 +45,7 @@ const COMMANDS: [&str; 8] = //TODO: Could this be a HashSet?
         "clone",
     ];
 const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
-const VERSION: &str = "0.2.21";
+const VERSION: &str = "0.2.23";
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -184,7 +184,7 @@ fn save_commit_locally(hash: u64, msg: &str) -> bool {
     remove_dir_all(".riel/area").expect("Failed to remove area.");
     create_dir(".riel/area").expect("Failed to create area.");
     //Check if head is empty
-    let is_first_commit: bool = check_head();
+    let is_first_commit: bool = check_empty_head();
     if is_first_commit {
         // copy also to head
         copy_recursive(
@@ -199,10 +199,17 @@ fn save_commit_locally(hash: u64, msg: &str) -> bool {
     }
     true
 }
-fn check_head() -> bool {
-    let head_dir = fs::read_dir(".riel/head").expect("Failed to read directory.");
-    let head_files: Vec<fs::DirEntry> = head_dir.map(|x| x.unwrap()).collect::<Vec<fs::DirEntry>>();
-    head_files.len() == 0
+fn check_empty_head() -> bool {
+    let is_empty = if !check_repo() {
+        true // no repo --> empty head --> true
+    }else if fs::metadata(".riel/head").is_ok()  { // head do not exists? --> then true
+        let head_dir = fs::read_dir(".riel/head");
+        let head_files = read_dir_to_files(head_dir).expect("Failed to read directory.");
+        head_files.len() == 0 // 0 files --> empty head --> true
+    } else {
+        true
+    };
+    return is_empty;
 }
 fn prepare_goto(hash: String) -> bool {
     let hash_reduced = hash;
