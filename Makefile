@@ -3,6 +3,10 @@
 build:
 	cargo build --release > /dev/null 2>&1
 
+dev:
+	cargo build > /dev/null 2>&1
+	strip target/debug/riel
+	sudo cp target/debug/riel /usr/local/bin/
 strip:
 	strip target/release/riel
 
