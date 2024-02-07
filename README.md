@@ -25,12 +25,7 @@ Adding, commiting, pseudo-random commit hashing, cloning using an https request 
 - Install Rust
 - Clone this repository
 - Run ```make dev``` or ```make all``` in root directory
-- In short, ```
-  git clone https://www.github.com/riel-foundation/riel
-  cd riel
-  make dev
-  ```
-
+- In short, ``` git clone https://www.github.com/riel-foundation/riel && cd riel && make dev ``` 
 ### Repositories structure as a json:
 ```json
 {
