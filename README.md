@@ -1,5 +1,5 @@
 # Riel: A Version Control System
-Version control system inspired by Conflict-Free Resolution Data-Types and Logoot algorithm
+Version control system inspired by CRDT (Conflict-Free Resolution Data-Types) concepts
 
 State: Not ready for production yet
 ### Current features:
