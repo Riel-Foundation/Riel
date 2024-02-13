@@ -23,6 +23,7 @@ mod help;
 mod mergers;
 mod remotes;
 mod utils;
+mod config;
 //internal
 use adding::add::add_files;
 use args_parser::{parse_args, ParsedArgsObject};
@@ -33,7 +34,7 @@ use crate::utils::filemanagers::filemanager::read_dir_to_files;
 const RIEL_IGNORE_BUFFER: &[u8] =
     b"# This is a .rielignore file. It is used to ignore files when adding them to the repository.
 \n# Folders should be written like this: \n.git\ntest\nignorethisfolder\nnode-modules\ntarget";
-const COMMANDS: [&str; 8] = //TODO: Could this be a HashSet?
+const COMMANDS: [&str; 9] = //TODO: Could this be a HashSet?
     [
         "help",
         "mount",
@@ -43,9 +44,10 @@ const COMMANDS: [&str; 8] = //TODO: Could this be a HashSet?
         "goto",
         "version",
         "clone",
+        "config"
     ];
 const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
-const VERSION: &str = "0.2.23";
+const VERSION: &str = "0.2.3";
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -247,6 +249,7 @@ fn check_options_basic(options: Vec<String>, command: &str) -> () {
 fn try_repo_exec(command: &str, args: ParsedArgsObject) -> () {
     match command {
         "clone" => clone(args.subcommands(), args.options()),
+        "config" => config::global::start_config(args),
         "commit" => {
             if commit(args.options(), args.subcommands()) {
                 println!("Commited.");
@@ -280,6 +283,7 @@ fn try_no_repo_exec(command: &str, args: ParsedArgsObject) -> () {
     match command {
         "mount" => mount_repo(),
         "clone" => clone(args.subcommands(), args.options()),
+        "config" => config::global::start_config(args),
         _ => println!("Failed to parse command here."),
     }
 }
