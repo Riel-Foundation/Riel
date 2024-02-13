@@ -29,7 +29,9 @@ use adding::add::add_files;
 use args_parser::{parse_args, ParsedArgsObject};
 use remotes::tcp_web::web_get_with_url;
 use utils::filemanagers::filemanager::copy_recursive;
+use utils::filemanagers::filereader::open_path_and_read_to_string;
 use crate::utils::filemanagers::filemanager::read_dir_to_files;
+use dirs::home_dir;
 // consts
 const RIEL_IGNORE_BUFFER: &[u8] =
     b"# This is a .rielignore file. It is used to ignore files when adding them to the repository.
@@ -50,10 +52,23 @@ const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
 const VERSION: &str = "0.2.3";
 
 fn main() {
-   /* This is deprecated */ if let Some(config_file) = env::home_dir() {
-        // Unpredictable behavior
-    } /* else we create it */ else {
-        // Even more unpredictable behavior
+   let mut config = config::empty_config();
+   if let Some(config_path) = home_dir() {
+        let rielconfig_path = format!("{}/.rielconfig", config_path.display());
+        if let Ok(config_file) = File::open(&rielconfig_path) {
+            let conf_string = open_path_and_read_to_string(&rielconfig_path);
+            let conf = config::Config::from_string(conf_string);
+            config = conf;
+        }else {
+            println!("Seems like this is your first time using Riel.\nWe will create a .rielconfig file in your home directory. Please configure it manually or using commands(TODO) before committing.");
+            let mut config_file = File::create(&rielconfig_path)
+            .expect("Failed to create .rielconfig file.");
+            config_file.write_all
+            (b"username: rieluser\nemail: youremailhere@mail.mail\n")
+            .expect("Failed to write to .rielconfig file.");
+        }
+    } else {
+        println!("Riel couldn't find your home directory. Please check your permissions.");
     }
     let args: Vec<String> = env::args().collect();
     let rielless_args: Vec<String> = args
@@ -290,5 +305,16 @@ fn try_no_repo_exec(command: &str, args: ParsedArgsObject) -> () {
         "clone" => clone(args.subcommands(), args.options()),
         "config" => config::global::start_config(args),
         _ => println!("Failed to parse command here."),
+    }
+}
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn test_config_from_string() {
+        let string = "username: ferris123\nemail: rielfoundation@gmail.com    \n".to_string();
+        let config = config::Config::from_string(string);
+        assert_eq!(config.username, "ferris123");
+        assert_eq!(config.email, "rielfoundation@gmail.com");
     }
 }
