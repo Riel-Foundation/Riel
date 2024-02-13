@@ -50,6 +50,11 @@ const RIEL_WORKS: &str = "Riel works! Try help or --help for more information";
 const VERSION: &str = "0.2.3";
 
 fn main() {
+   /* This is deprecated */ if let Some(config_file) = env::home_dir() {
+        // Unpredictable behavior
+    } /* else we create it */ else {
+        // Even more unpredictable behavior
+    }
     let args: Vec<String> = env::args().collect();
     let rielless_args: Vec<String> = args
         .iter()
